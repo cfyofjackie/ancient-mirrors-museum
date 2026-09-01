@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.local
+.DS_Store
+
+# 完整字体源文件（子集化前的输入，24MB 级，不进版本库；子集产物 src/fonts/*.woff2 正常提交）
+/lxgw-regular.ttf
+/lxgw-medium.ttf
