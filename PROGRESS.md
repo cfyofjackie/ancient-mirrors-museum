@@ -16,7 +16,11 @@
 - [x] 核心交互开发（滑动切换 / 点击翻面）✅ M2（浏览器实测通过，见 M2 记录）
 - [x] 热点与史实资料 ✅ M3（浏览器实测通过，见 M3 记录）
 - [x] 视觉打磨 ✅ M4（霞鹜文楷子集接入 + 展柜光池，见 M4 记录）
-- [ ] **素材升级（M4.5，进行中）**：真实铜镜素材 + 历史风格背景，规格见「八、素材规格」
+- [ ] **素材升级（M4.5，进行中）**：管线与工具就绪，等美术出图
+  - ✅ `npm run assets:optimize`：原始大图（`assets-src/mirrors/<id>/{front,back}.png`）→ 缩放 1200²、圆形抠图转透明底（`--mask-r` 可调半径 / `--no-mask`）、webp 压缩、超预算告警；背景图（`assets-src/backgrounds/`）→ 1080×2340 cover。假图全流程实测通过（含四角透明/中心不透明验证）
+  - ✅ 热点标定工具：`http://localhost:6180/?calibrate`，点图取百分比坐标、载入现有热点、删除、一键复制 JSON 回填 `mirrors.ts`
+  - ⏳ 镜面 8 图：用户出图中（美术方向经写实 → 风格化拟物 → **偏手绘**两次调整，Prompt 手册待风格定稿后同步更新）
+  - ⏳ 朝代背景：图层机制未动工（等背景素材方向明确）
 - [ ] 视觉走查与验收（对照 SLC.md 第九节完成标准）
 - [ ] 小红书打包适配（推后至素材定稿后）
 
@@ -204,7 +208,7 @@ mirror-museum/
 
 生成方式建议：**AI 生图为主**（即梦/Midjourney 等），按朝代出正反两面；纹样形制的史实准确性不苛求（史实锚点由「史实资料卡」的馆藏实拍图承担，两者角色不同）。图先出 Back（纹样面），Front 可复用同一素面模板换色调。
 
-交付流程：原始图（PNG，可超大）丢 `assets-src/mirrors/<id>/` → 跑 `npm run assets:optimize`（待写：sharp 批量缩放至 1200、转 webp、压体积）→ 自动归位到 `assets/mirrors/` → **在 `mirrors.ts` 重标热点百分比坐标**（R5）。
+交付流程：原始图（PNG，可超大）丢 `assets-src/mirrors/<id>/` → 跑 `npm run assets:optimize`（sharp 批量缩放至 1200、圆形抠图转透明、转 webp、压体积）→ 自动归位到 `assets/mirrors/` → 在 `http://localhost:6180/?calibrate` 标定热点 → 回填 `mirrors.ts`（R5）。
 
 ### 8.2 朝代背景
 

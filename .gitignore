@@ -3,6 +3,9 @@ dist/
 *.local
 .DS_Store
 
+# 用户原始素材（大图，不进版本库；优化产物在 assets/ 正常提交）
+assets-src/
+
 # 完整字体源文件（子集化前的输入，24MB 级，不进版本库；子集产物 src/fonts/*.woff2 正常提交）
 /lxgw-regular.ttf
 /lxgw-medium.ttf
