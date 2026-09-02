@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1600">
+  <!--
+    程序化绢本底纹（决策：背景 A 档占位，PROGRESS.md 8.2）
+    三层：细密经纬织纹（pattern）+ 纤维噪点（fractalNoise）+ 大尺度明暗不均（低频噪声）。
+    全部半透明，页面渐变底透出；stitchTiles 保证 1600px 平铺无缝。
+    替换 AI 实拍绢纹时：同名文件覆盖或改 CSS 引用即可，机制不动。
+  -->
+  <defs>
+    <pattern id="weave" width="4" height="4" patternUnits="userSpaceOnUse">
+      <!-- 经纬：亮丝与暗隙各半，透明底让页面渐变色透出 -->
+      <rect width="4" height="2" fill="#cfd8e0" opacity="0.030"/>
+      <rect y="2" width="4" height="2" fill="#000000" opacity="0.085"/>
+      <rect width="2" height="4" fill="#cfd8e0" opacity="0.018"/>
+      <rect x="2" width="2" height="4" fill="#000000" opacity="0.055"/>
+    </pattern>
+    <filter id="fiber" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="2" seed="11" stitchTiles="stitch"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.92  0 0 0 0 0.90  0 0 0 0 0.82  0 0 0 0.5 0"/>
+    </filter>
+    <filter id="fiberDark" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="2" seed="23" stitchTiles="stitch"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.6 0"/>
+    </filter>
+    <filter id="cloudy" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="3" seed="5" stitchTiles="stitch"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.85  0 0 0 0 0.88  0 0 0 0 0.9  0 0 0 0.4 0"/>
+    </filter>
+  </defs>
+
+  <!-- 大尺度明暗不均：绢面的自然斑驳 -->
+  <rect width="1600" height="1600" filter="url(#cloudy)" opacity="0.16"/>
+  <!-- 纤维亮噪 / 暗噪 -->
+  <rect width="1600" height="1600" filter="url(#fiber)" opacity="0.10"/>
+  <rect width="1600" height="1600" filter="url(#fiberDark)" opacity="0.12"/>
+  <!-- 经纬织纹 -->
+  <rect width="1600" height="1600" fill="url(#weave)"/>
+</svg>

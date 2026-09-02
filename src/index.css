@@ -40,7 +40,11 @@ body,
 }
 
 body {
-  background: linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+  /* 绢本底纹（程序化占位，src/textures/silk.svg）+ 原有纵向渐变 */
+  background-color: var(--bg);
+  background-image: url('./textures/silk.svg'), linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+  background-size: 800px 800px, 100% 100%;
+  background-repeat: repeat, no-repeat;
   color: var(--ink);
   font-family: var(--font-serif);
   -webkit-font-smoothing: antialiased;
