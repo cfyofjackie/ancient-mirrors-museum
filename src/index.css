@@ -463,8 +463,37 @@ body {
   color: var(--ink-dim);
 }
 
+.poc3d-controls {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.poc3d-tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.poc3d-tabs button {
+  padding: 6px 14px;
+  border: 1px solid var(--ink-faint);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-dim);
+  font-family: var(--font-serif);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.poc3d-tabs button.active {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 .poc3d-canvas {
-  width: min(86vw, 78dvh);
+  width: min(66vw, 60dvh);
   aspect-ratio: 1;
   touch-action: none;
   cursor: pointer;
