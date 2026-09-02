@@ -40,11 +40,16 @@ body,
 }
 
 body {
-  /* 绢本底纹（程序化占位，src/textures/silk.svg）+ 原有纵向渐变 */
+  /* 博物馆展墙背景（用户参考图，src/textures/museum-wall.webp）
+     竖屏：高度撑满、水平居中（图比 0.563 > 常见手机屏比，可全覆盖）；
+     横屏：cover 取中上部（光池带），底层渐变补边（取自参考图边缘色） */
   background-color: var(--bg);
-  background-image: url('./textures/silk.svg'), linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
-  background-size: 800px 800px, 100% 100%;
-  background-repeat: repeat, no-repeat;
+  background-image:
+    url('./textures/museum-wall.webp'),
+    linear-gradient(180deg, #2b2f32 0%, #242a2f 55%, #1a1f24 100%);
+  background-size: auto 100%, 100% 100%;
+  background-position: center top, center;
+  background-repeat: no-repeat, no-repeat;
   color: var(--ink);
   font-family: var(--font-serif);
   -webkit-font-smoothing: antialiased;
@@ -54,6 +59,13 @@ body {
   /* 纵向手势完全让给朝代切换（决策 D3）：页面本身不滚动 */
   touch-action: none;
   overscroll-behavior: none;
+}
+
+@media (orientation: landscape) {
+  body {
+    background-size: cover, 100% 100%;
+    background-position: center 28%, center;
+  }
 }
 
 .app {
@@ -74,14 +86,18 @@ body {
   z-index: -1;
 }
 
-/* 展柜光池：镜子后方的极淡射灯感，避免大面积花纹（SLC 第六节） */
+/* 展墙图已自带光池与暗角，此处仅保留顶/底部文字保护 */
 .app::before {
   content: '';
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(ellipse 85% 50% at 50% 42%, rgba(233, 227, 212, 0.055), transparent 62%),
-    radial-gradient(ellipse 140% 100% at 50% 50%, transparent 62%, rgba(8, 10, 12, 0.4) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(10, 13, 16, 0.25) 0%,
+    rgba(10, 13, 16, 0) 16%,
+    rgba(10, 13, 16, 0) 62%,
+    rgba(10, 13, 16, 0.5) 100%
+  );
   pointer-events: none;
   z-index: -1;
 }
