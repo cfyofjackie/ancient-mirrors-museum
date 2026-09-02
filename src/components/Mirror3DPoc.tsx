@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 
@@ -8,13 +8,24 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
  */
 export default function Mirror3DPoc() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current!
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.toneMapping = THREE.ACESFilmicToneMapping
-    renderer.toneMappingExposure = 0.95
+    let dispose: (() => void) | null = null
+    try {
+      // WebGL 不可用（被禁用/上下文丢失）时给出可见提示，而不是黑屏
+      const probe = document.createElement('canvas')
+      const gl = probe.getContext('webgl2') ?? probe.getContext('webgl')
+      if (!gl) {
+        setError('当前环境 WebGL 不可用，无法渲染 3D（正式版将回退为平面方案）')
+        return
+      }
+
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+      renderer.toneMapping = THREE.ACESFilmicToneMapping
+      renderer.toneMappingExposure = 0.95
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 50)
@@ -130,7 +141,7 @@ export default function Mirror3DPoc() {
     }
     tick()
 
-    return () => {
+    dispose = () => {
       cancelAnimationFrame(raf)
       window.removeEventListener('pointermove', onPointer)
       window.removeEventListener('resize', resize)
@@ -143,12 +154,17 @@ export default function Mirror3DPoc() {
       frontMat.dispose()
       renderer.dispose()
     }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    }
+
+    return () => dispose?.()
   }, [])
 
   return (
     <div className="poc3d-root">
       <h1 className="poc3d-title">立体化 POC · 汉 · 四神博局纹镜</h1>
-      <canvas ref={canvasRef} className="poc3d-canvas" />
+      {error ? <p className="poc3d-error">{error}</p> : <canvas ref={canvasRef} className="poc3d-canvas" />}
       <p className="poc3d-hint">点击铜镜翻面 · 移动指针让光线流动 · 上下拖出倾斜角</p>
     </div>
   )

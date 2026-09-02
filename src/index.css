@@ -476,6 +476,17 @@ body {
   letter-spacing: 0.1em;
 }
 
+.poc3d-error {
+  max-width: 30em;
+  padding: 16px;
+  border: 1px dashed var(--accent);
+  border-radius: 10px;
+  color: var(--ink-dim);
+  font-size: 14px;
+  line-height: 1.8;
+  word-break: break-all;
+}
+
 .app-footer {
   text-align: center;
   display: flex;
