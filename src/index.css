@@ -181,6 +181,21 @@ body {
   }
 }
 
+/* 3D 铜镜容器：热点层与画布同框叠放 */
+.mirror-3d-wrap {
+  position: relative;
+  width: min(62vw, 58vh, 520px);
+  max-height: 100%;
+  aspect-ratio: 1;
+}
+
+.mirror-3d-wrap canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 24px 48px rgba(0, 0, 0, 0.45));
+}
+
 /* ---- 热点（SLC 第三节 3：轻微出现、很淡的呼吸，不闪烁） ---- */
 
 .hotspot-layer {

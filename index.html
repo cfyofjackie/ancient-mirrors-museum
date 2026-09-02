@@ -10,6 +10,12 @@
     <title>照见千年 · 铜镜小展览</title>
   </head>
   <body>
+    <script>
+      // 早期错误捕获（调试用）
+      window.__errs = [];
+      window.addEventListener('error', function (e) { window.__errs.push(String(e.message)); });
+      window.addEventListener('unhandledrejection', function (e) { window.__errs.push('rej: ' + String(e.reason)); });
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

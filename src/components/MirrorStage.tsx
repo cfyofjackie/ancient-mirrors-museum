@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion, type PanInfo } from 'framer-motion'
 import type { Hotspot, Mirror } from '../data/mirrors'
+import Mirror3D, { hasWebGL } from './Mirror3D'
 import MirrorFlip from './MirrorFlip'
+import HotspotComponent from './Hotspot'
 
 /** 触发切换的滑动阈值：位移超过 70px 或速度超过 350px/s（SLC 优先级第 1 条：交互顺滑的重点打磨项） */
 const SWIPE_DISTANCE = 70
@@ -37,10 +39,13 @@ const slideVariants = {
  * - onTap 必须挂在 drag 元素自身：draggable 父元素会抑制子元素的 tap 手势，
  *   且 drag 元素自身的 onTap 自带「未拖动才算 tap」的判定
  * - tap 落在热点上时不翻面（closest 判断走原生 DOM，React 合成层的 stopPropagation 拦不住原生监听）
+ * - 渲染：有 3D 素材且 WebGL 可用 → Mirror3D；否则回退 CSS 平面翻面
  */
 export default function MirrorStage({ mirror, direction, onSwitch, onHotspotOpen }: MirrorStageProps) {
   const [flipped, setFlipped] = useState(false)
   const [showHotspots, setShowHotspots] = useState(false)
+  const webgl = useMemo(() => hasWebGL(), [])
+  const use3D = webgl && !!mirror.art3d
 
   // 停留 1.6 秒后浮现热点；翻面或换镜后重置，回到镜背重新计时
   useEffect(() => {
@@ -83,12 +88,23 @@ export default function MirrorStage({ mirror, direction, onSwitch, onHotspotOpen
           onDragEnd={handleDragEnd}
           onTap={handleTap}
         >
-          <MirrorFlip
-            mirror={mirror}
-            flipped={flipped}
-            showHotspots={showHotspots}
-            onHotspotOpen={onHotspotOpen}
-          />
+          {use3D && mirror.art3d ? (
+            <div className="mirror-3d-wrap">
+              <Mirror3D art={mirror.art3d} flipped={flipped} />
+              {!flipped && (
+                <div className="hotspot-layer">
+                  <AnimatePresence>
+                    {showHotspots &&
+                      mirror.hotspots.map((h, i) => (
+                        <HotspotComponent key={h.title} hotspot={h} index={i} onOpen={() => onHotspotOpen(h)} />
+                      ))}
+                  </AnimatePresence>
+                </div>
+              )}
+            </div>
+          ) : (
+            <MirrorFlip mirror={mirror} flipped={flipped} />
+          )}
         </motion.div>
       </AnimatePresence>
 

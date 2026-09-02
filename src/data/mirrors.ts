@@ -24,6 +24,21 @@ export interface Reference {
   sourceUrl?: string
 }
 
+/** 3D 素材（决策 D9 管线产物：`npm run normal` 从平涂图生成） */
+export type Shape3D =
+  | { type: 'circle' }
+  | { type: 'polygon'; sides: number }
+  | { type: 'lobed'; lobes: number; depth: number }
+
+export interface Art3D {
+  /** 平涂彩图（表面色） */
+  flat: string
+  /** 法线贴图（凹凸起伏） */
+  normal: string
+  /** 镜体轮廓 */
+  shape: Shape3D
+}
+
 export interface Mirror {
   /** 目录名 / 稳定 id，如 'han' */
   id: string
@@ -38,6 +53,8 @@ export interface Mirror {
   hotspots: Hotspot[]
   /** 史实资料（M3 新增，可为空表示尚未整理） */
   reference?: Reference
+  /** 3D 渲染素材（D9）；缺省时回退 CSS 平面翻面 */
+  art3d?: Art3D
 }
 
 const mirrors: Mirror[] = [
@@ -73,6 +90,7 @@ const mirrors: Mirror[] = [
       source: '克利夫兰艺术博物馆（CC0）',
       sourceUrl: 'https://clevelandart.org/art/1995.301',
     },
+    art3d: { flat: 'poc3d/han/sishou.flat.webp', normal: 'poc3d/han/sishou.normal.webp', shape: { type: 'circle' } },
   },
   {
     id: 'tang',
@@ -106,6 +124,7 @@ const mirrors: Mirror[] = [
       source: '克利夫兰艺术博物馆（CC0）',
       sourceUrl: 'https://clevelandart.org/art/1995.356',
     },
+    art3d: { flat: 'poc3d/tang/octagon.flat.webp', normal: 'poc3d/tang/octagon.normal.webp', shape: { type: 'polygon', sides: 8 } },
   },
   {
     id: 'song',
@@ -130,6 +149,7 @@ const mirrors: Mirror[] = [
       detail:
         '宋代湖州石家铸镜盛极一时，镜背多铸「湖州真石家念二叔照子」等商标式铭文，是古代早期品牌意识的实物例证。',
     },
+    art3d: { flat: 'poc3d/song/kuihua.flat.webp', normal: 'poc3d/song/kuihua.normal.webp', shape: { type: 'lobed', lobes: 8, depth: 0.11 } },
   },
   {
     id: 'ming',
@@ -160,6 +180,7 @@ const mirrors: Mirror[] = [
       detail:
         '「五子登科」吉祥铭文镜流行于明代，多为圆形圆钮，铭文环钮而铸，寄托科举登第、多子多福的朴素愿望。',
     },
+    art3d: { flat: 'poc3d/ming/wuzidengke.flat.webp', normal: 'poc3d/ming/wuzidengke.normal.webp', shape: { type: 'circle' } },
   },
 ]
 
