@@ -108,6 +108,8 @@ body {
   justify-content: center;
   min-height: 0;
   width: 100%;
+  /* 尺寸容器：镜面尺寸用 cqw/cqh 按舞台实际宽高取比，保证不侵占上下文字（桌面端溢出修复） */
+  container-type: size;
 }
 
 /* AnimatePresence popLayout 模式下，退场元素会被取出文档流居中叠放 */
@@ -131,8 +133,9 @@ body {
 
 .mirror-face {
   display: block;
-  /* 铜镜占屏幕宽度约 50%–65%（SLC 第七节），且不超出剩余高度 */
+  /* 铜镜占舞台约 62%（SLC 第七节：移动端 50%–65%），不超出舞台高度 */
   width: min(62vw, 58vh, 520px);
+  width: min(62cqw, 62cqh, 520px);
   max-height: 100%;
   object-fit: contain;
   backface-visibility: hidden;
@@ -184,7 +187,9 @@ body {
 /* 3D 铜镜容器：热点层与画布同框叠放 */
 .mirror-3d-wrap {
   position: relative;
+  /* 尺寸 = 舞台宽高的 62% 取小者，vh 行是旧浏览器回退 */
   width: min(62vw, 58vh, 520px);
+  width: min(62cqw, 62cqh, 520px);
   max-height: 100%;
   aspect-ratio: 1;
 }
