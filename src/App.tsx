@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useMotionValue } from 'framer-motion'
 import mirrors from './data/mirrors'
 import type { Hotspot } from './data/mirrors'
 import MirrorStage from './components/MirrorStage'
@@ -10,6 +10,8 @@ const SWITCH_COOLDOWN = 650
 /** 滚轮单独用更长的冷却，吸收触控板连续小滚动 */
 const WHEEL_COOLDOWN = 900
 const WHEEL_THRESHOLD = 24
+/** 停留多久后浮现热点（SLC：1–2 秒，取 1.6s） */
+const HOTSPOT_DWELL = 1600
 
 type Sheet =
   | { type: 'hotspot'; hotspot: Hotspot }
@@ -26,7 +28,13 @@ export default function App() {
   const [index, setIndex] = useState(0)
   const [direction, setDirection] = useState<1 | -1>(1)
   const [sheet, setSheet] = useState<Sheet>(null)
+  const [flipped, setFlipped] = useState(false)
+  const [showHotspots, setShowHotspots] = useState(false)
   const lastSwitch = useRef(0)
+  /** 拖拽跟手位移 + 手势时刻（与 MirrorStage 共享） */
+  const dragY = useMotionValue(0)
+  const downY = useMotionValue(0)
+  const lastDragEnd = useMotionValue(0)
 
   // 循环切换（决策 D8）：上滑 = 下一个朝代，下滑 = 上一个；明上滑绕回汉，汉下滑绕到明
   const go = useCallback((delta: 1 | -1) => {
@@ -34,6 +42,7 @@ export default function App() {
     if (now - lastSwitch.current < SWITCH_COOLDOWN) return
     lastSwitch.current = now
     setSheet(null)
+    setFlipped(false)
     setDirection(delta)
     setIndex((i) => (i + delta + mirrors.length) % mirrors.length)
   }, [])
@@ -72,13 +81,22 @@ export default function App() {
 
   const mirror = mirrors[index]
 
+  // 停留 1.6 秒后浮现热点；翻面或换镜后重置
+  useEffect(() => {
+    setShowHotspots(false)
+    if (flipped) return
+    const timer = setTimeout(() => setShowHotspots(true), HOTSPOT_DWELL)
+    return () => clearTimeout(timer)
+  }, [mirror.id, flipped])
+
+  const toggleFlip = useCallback(() => {
+    setFlipped((v) => !v)
+  }, [])
+
   const sheetContent: SheetContent | null = (() => {
     if (!sheet) return null
     if (sheet.type === 'hotspot') {
-      return {
-        title: sheet.hotspot.title,
-        description: sheet.hotspot.description,
-      }
+      return { title: sheet.hotspot.title, description: sheet.hotspot.description }
     }
     const ref = mirror.reference
     if (!ref) return null
@@ -95,24 +113,24 @@ export default function App() {
 
   return (
     <div className="app">
-      {/* 朝代微染色层（极低透明度，随切换缓慢过渡） */}
-      <motion.div
-        className="bg-tint"
-        animate={{ backgroundColor: mirror.tint }}
-        transition={{ duration: 0.9 }}
+      <MirrorStage
+        mirror={mirror}
+        flipped={flipped}
+        showHotspots={showHotspots}
+        dragY={dragY}
+        downY={downY}
+        lastDragEnd={lastDragEnd}
+        onToggleFlip={toggleFlip}
+        onHotspotOpen={(hotspot) => setSheet({ type: 'hotspot', hotspot })}
+        onSwitch={go}
       />
+
+      <motion.div className="bg-tint" animate={{ backgroundColor: mirror.tint }} transition={{ duration: 0.9 }} />
 
       <header className="app-header">
         <h1 className="app-title">照见千年</h1>
         <p className="app-subtitle">从一面铜镜，看见不同时代的审美</p>
       </header>
-
-      <MirrorStage
-        mirror={mirror}
-        direction={direction}
-        onSwitch={go}
-        onHotspotOpen={(hotspot) => setSheet({ type: 'hotspot', hotspot })}
-      />
 
       <footer className="app-footer">
         <AnimatePresence mode="wait" custom={direction} initial={false}>
@@ -134,11 +152,7 @@ export default function App() {
         </AnimatePresence>
 
         {mirror.reference && (
-          <button
-            type="button"
-            className="ref-entry"
-            onClick={() => setSheet({ type: 'reference' })}
-          >
+          <button type="button" className="ref-entry" onClick={() => setSheet({ type: 'reference' })}>
             史实资料
           </button>
         )}

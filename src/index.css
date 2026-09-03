@@ -70,13 +70,41 @@ body {
   padding: max(20px, env(safe-area-inset-top)) 24px max(20px, env(safe-area-inset-bottom));
 }
 
-/* 朝代微染色层：位于内容之下、页面背景之上 */
+/* 全屏手势+场景层（透明输入面）：触摸区域全屏，镜子经 padding 避让居中于文字空带 */
+.stage-gesture {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* 避开顶部标题与底部文字（视觉空带），触摸热区仍是全屏 */
+  padding: 96px 0 232px;
+  touch-action: none;
+  cursor: grab;
+}
+
+.stage-gesture:active {
+  cursor: grabbing;
+}
+
+/* 镜面空带：镜子在此带内居中，随视口自适应 */
+.scene-band {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 朝代微染色层：垫在场景画布之下透出 */
 .bg-tint {
   position: absolute;
   inset: 0;
   opacity: 0.07;
   pointer-events: none;
-  z-index: -1;
+  z-index: 0;
 }
 
 /* 展墙图已自带光池与暗角，此处仅保留顶/底部文字保护（浮于 3D 场景之上、文字之下） */
@@ -117,15 +145,22 @@ body {
 }
 
 .mirror-stage {
-  /* 手势层占满整个视口：全屏任意位置（含页脚文字区）都可滑动翻页；文字浮于其上 */
-  position: absolute;
-  inset: 0;
-  z-index: 1;
+  /* 镜面画布区：flex:1 空带（上下文字之间），镜子恒在此带内居中，不与文字重叠 */
+  position: relative;
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* 尺寸容器：镜面尺寸用 cqw/cqh 按视口实际宽高取比 */
+  min-height: 0;
+  width: 100%;
+  /* 尺寸容器：镜面尺寸用 cqw/cqh 按空带实际宽高取比 */
   container-type: size;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.mirror-stage canvas {
+  pointer-events: auto;
 }
 
 /* 手势层：覆盖整个舞台（滑动/点击任意位置翻页），镜子居中于本层 */
@@ -569,6 +604,7 @@ body {
 .app-footer {
   /* 容器穿透触摸（页脚文字区也能滑动翻页）；交互子元素单独恢复 */
   pointer-events: none;
+  margin-top: auto; /* flex column 中推到底部 */
   text-align: center;
   display: flex;
   flex-direction: column;
