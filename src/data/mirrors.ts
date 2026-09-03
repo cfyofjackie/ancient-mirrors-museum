@@ -277,9 +277,9 @@ const mirrors: Mirror[] = [
   {
     id: 'song',
     dynasty: '宋',
-    name: '湖州石家铭文镜',
+    name: '葵花型铭纹镜',
     shortDescription:
-      '宋代铜镜趋于素雅，纹饰退位给铭文，一句「湖州真石家念二叔照子」，透出市井商业的烟火气。',
+      '宋代铜镜趋于素雅：葵花形的镜缘、疏朗的铭纹——审美从繁复纹样转向了器形与质地本身。',
     tint: '#6f7a72',
     frontImage: 'mirrors/song/front.webp',
     backImage: 'mirrors/song/back.webp',
@@ -293,9 +293,8 @@ const mirrors: Mirror[] = [
       },
     ],
     reference: {
-      title: '宋 · 葵花形花鸟镜（同类器参考）',
-      detail:
-        '宋代葵花形镜多为黑漆古质地，镜背花卉纹清雅疏朗——与镜缘的葵花瓣形相映成趣。',
+      title: '宋 · 葵花型铭纹镜（同类器参考）',
+      detail: '待补充',
       imageUrl: 'references/song.webp',
       imageAlt: '宋 · 葵花形花鸟镜 实物参考',
     },
