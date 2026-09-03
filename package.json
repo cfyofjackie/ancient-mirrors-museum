@@ -10,7 +10,8 @@
     "placeholders": "node scripts/make-placeholders.mjs",
     "font:subset": "node scripts/subset-font.mjs",
     "assets:optimize": "node scripts/optimize-assets.mjs",
-    "normal": "node scripts/make-normal.mjs"
+    "normal": "node scripts/make-normal.mjs",
+    "deploy": "npm run build && npx -y gh-pages -d dist"
   },
   "dependencies": {
     "framer-motion": "^11.11.17",

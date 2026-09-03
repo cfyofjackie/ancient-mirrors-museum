@@ -34,7 +34,7 @@ export default function Mirror3DPoc() {
         </div>
       </div>
       {mirror.art3d ? (
-        <Mirror3D key={`${mirror.id}-${mode}`} art={mirror.art3d} mode={mode} className="poc3d-canvas" />
+        <Mirror3D art={mirror.art3d} mode={mode} className="poc3d-canvas" />
       ) : (
         <p className="poc3d-error">该镜子暂无 3D 素材</p>
       )}

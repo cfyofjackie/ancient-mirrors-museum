@@ -146,9 +146,9 @@ body {
 
 .mirror-face {
   display: block;
-  /* 铜镜占舞台约 62%（SLC 第七节：移动端 50%–65%），不超出舞台高度 */
-  width: min(62vw, 58vh, 520px);
-  width: min(62cqw, 62cqh, 520px);
+  /* 铜镜占舞台约 70%（补偿舞台内边距后观感对齐 SLC 62%），不超出舞台高度 */
+  width: min(70vw, 58vh, 560px);
+  width: min(70cqw, 70cqh, 560px);
   max-height: 100%;
   object-fit: contain;
   backface-visibility: hidden;
@@ -200,8 +200,8 @@ body {
 /* 3D 铜镜容器：热点层与画布同框叠放 */
 .mirror-3d-wrap {
   position: relative;
-  /* 70cqw 补偿舞台内边距，观感对齐 62vw；62cqh 限制不侵上下文字 */
-  width: min(70cqw, 62cqh, 520px);
+  /* 70cqw 补偿舞台内边距（观感对齐 62vw）；70cqh 保证不侵上下文字 */
+  width: min(70cqw, 70cqh, 560px);
   max-height: 100%;
   aspect-ratio: 1;
 }
@@ -210,6 +210,8 @@ body {
   display: block;
   width: 100%;
   height: 100%;
+  /* 触摸事件完整交给手势层（部分移动浏览器默认在 canvas 上启动滚动/缩放手势） */
+  touch-action: none;
   filter: drop-shadow(0 24px 48px rgba(0, 0, 0, 0.45));
 }
 

@@ -13,6 +13,11 @@ export function hasWebGL(): boolean {
 }
 
 const R = 1.22
+const MIRROR_Y = 0
+const FLIP_MS = 650
+const DROP_MS = 450
+const EDGE_COLOR = 0x5a4a30
+const FRONT_COLOR = 0x6b5a3e
 
 /** 镜背轮廓几何：圆 / 正多边形 / 葵口（极坐标波浪），UV 统一映射到 [0,1]² */
 function makeFaceGeometry(shape: Shape3D): THREE.BufferGeometry {
@@ -56,37 +61,48 @@ function makeGradientMap(): THREE.DataTexture {
 
 interface Mirror3DProps {
   art: Art3D
-  /**
-   * 受控翻面：主页面由手势层驱动（传入 flipped）；
-   * 不传则组件内部点击自翻（POC 用）。
-   */
+  /** 受控翻面：主页面由手势层驱动；不传则点击自翻（POC 用） */
   flipped?: boolean
   mode?: 'pbr' | 'toon'
   className?: string
 }
 
 /**
- * 3D 铜镜（决策 D9）：平涂图 + 法线贴图 + 实时光照的圆盘。
- * 纯渲染组件：翻面状态受控（或不传 flipped 时点击自翻），手势与热点由外层负责。
+ * 3D 铜镜（决策 D9）：渲染器与场景**常驻**——切换朝代只热替换纹理与几何（零重建）。
+ * 此前每次切换销毁重建渲染器是滑动卡顿的根因。
+ * 翻面受控（主页面手势驱动）或点击自翻（POC）。
  */
 export default function Mirror3D({ art, flipped, mode = 'pbr', className }: Mirror3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const target = useRef(0)
-  const anim = useRef({ from: 0, to: 0, t0: -1 })
+  const api = useRef<{
+    applyArt: (a: Art3D) => void
+    applyMode: (m: 'pbr' | 'toon') => void
+    setFlipped: (f: boolean) => void
+  }>()
   const controlled = flipped !== undefined
 
   useEffect(() => {
-    if (controlled) {
-      anim.current = { from: anim.current.to, to: flipped ? Math.PI : 0, t0: performance.now() }
-      target.current = anim.current.to
-    }
+    if (controlled) api.current?.setFlipped(!!flipped)
   }, [flipped, controlled])
+
+  useEffect(() => {
+    api.current?.applyArt(art)
+  }, [art])
+
+  useEffect(() => {
+    api.current?.applyMode(mode)
+  }, [mode])
 
   useEffect(() => {
     const canvas = canvasRef.current!
     let dispose: (() => void) | null = null
     try {
-      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })
+      const renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: true,
+        alpha: true,
+        powerPreference: 'high-performance',
+      })
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
       renderer.toneMapping = THREE.ACESFilmicToneMapping
       renderer.toneMappingExposure = 0.95
@@ -100,79 +116,123 @@ export default function Mirror3D({ art, flipped, mode = 'pbr', className }: Mirr
       scene.environment = envTex
 
       const loader = new THREE.TextureLoader()
-      const load = (url: string) => {
-        const t = loader.load(url)
+      const setTexParams = (t: THREE.Texture, srgb: boolean) => {
         t.anisotropy = renderer.capabilities.getMaxAnisotropy()
+        if (srgb) t.colorSpace = THREE.SRGBColorSpace
         return t
       }
-      const flatMap = load(art.flat)
-      flatMap.colorSpace = THREE.SRGBColorSpace
-      const normalMap = load(art.normal)
-      const gradientMap = mode === 'toon' ? makeGradientMap() : null
 
-      const backGeo = makeFaceGeometry(art.shape)
-      const frontGeo = makeFaceGeometry(art.shape)
-      const edgeGeo = makeEdgeGeometry(art.shape)
+      // ---- 镜体网格（几何/纹理/材质均可热替换，渲染器常驻）----
+      let gradientMap: THREE.DataTexture | null = null
+      let backGeo = makeFaceGeometry(art.shape)
+      let frontGeo = makeFaceGeometry(art.shape)
+      let edgeGeo = makeEdgeGeometry(art.shape)
+      const tex: { flat: THREE.Texture | null; normal: THREE.Texture | null } = { flat: null, normal: null }
 
-      const backMat =
-        mode === 'pbr'
-          ? new THREE.MeshStandardMaterial({
-              map: flatMap,
-              normalMap,
-              normalScale: new THREE.Vector2(1.6, 1.6),
-              metalness: 0.82,
-              roughness: 0.52,
-              envMapIntensity: 0.5,
-            })
-          : new THREE.MeshToonMaterial({
-              map: flatMap,
-              normalMap,
-              normalScale: new THREE.Vector2(1.5, 1.5),
-              gradientMap: gradientMap!,
-            })
-      const edgeColor = 0x5a4a30
-      const edgeMat =
-        mode === 'pbr'
-          ? new THREE.MeshStandardMaterial({ color: edgeColor, metalness: 0.9, roughness: 0.42, envMapIntensity: 0.5 })
-          : new THREE.MeshToonMaterial({ color: edgeColor, gradientMap: gradientMap! })
-      const frontColor = 0x6b5a3e
-      const frontMat =
-        mode === 'pbr'
-          ? new THREE.MeshStandardMaterial({ color: frontColor, metalness: 0.72, roughness: 0.5, envMapIntensity: 0.28 })
-          : new THREE.MeshToonMaterial({ color: frontColor, gradientMap: gradientMap! })
+      const buildMaterials = (m: 'pbr' | 'toon') => {
+        if (m === 'toon' && !gradientMap) gradientMap = makeGradientMap()
+        const gradient = m === 'toon' ? gradientMap! : undefined
+        const common = { normalMap: tex.normal, normalScale: new THREE.Vector2(1.55, 1.55) }
+        return {
+          back:
+            m === 'pbr'
+              ? new THREE.MeshStandardMaterial({
+                  map: tex.flat,
+                  metalness: 0.82,
+                  roughness: 0.52,
+                  envMapIntensity: 0.5,
+                  ...common,
+                })
+              : new THREE.MeshToonMaterial({ map: tex.flat, gradientMap: gradient, ...common }),
+          edge:
+            m === 'pbr'
+              ? new THREE.MeshStandardMaterial({ color: EDGE_COLOR, metalness: 0.9, roughness: 0.42, envMapIntensity: 0.5 })
+              : new THREE.MeshToonMaterial({ color: EDGE_COLOR, gradientMap: gradient }),
+          front:
+            m === 'pbr'
+              ? new THREE.MeshStandardMaterial({ color: FRONT_COLOR, metalness: 0.72, roughness: 0.5, envMapIntensity: 0.28 })
+              : new THREE.MeshToonMaterial({ color: FRONT_COLOR, gradientMap: gradient }),
+        }
+      }
 
-      const back = new THREE.Mesh(backGeo, backMat)
-      const edge = new THREE.Mesh(edgeGeo, edgeMat)
+      let mats = buildMaterials(mode)
+      const back = new THREE.Mesh(backGeo, mats.back)
+      const edge = new THREE.Mesh(edgeGeo, mats.edge)
       edge.rotation.x = Math.PI / 2
-      const front = new THREE.Mesh(frontGeo, frontMat)
+      const front = new THREE.Mesh(frontGeo, mats.front)
       front.rotation.y = Math.PI
       front.position.z = 0.071
 
-      const mirror = new THREE.Group()
-      mirror.add(back, edge, front)
-      scene.add(mirror)
+      const disc = new THREE.Group()
+      disc.add(back, edge, front)
+      disc.position.y = MIRROR_Y
+      scene.add(disc)
 
-      const key = new THREE.DirectionalLight(0xffe6c4, mode === 'pbr' ? 1.15 : 1.5)
-      key.position.set(-2, 2.4, 2.6)
-      scene.add(key)
-      const fill = new THREE.DirectionalLight(0x9fb4c8, mode === 'pbr' ? 0.22 : 0.5)
-      fill.position.set(2.4, -1.2, 1.6)
-      scene.add(fill)
+      // ---- 素材热替换：换纹理 + 几何，渲染器不动；入场升起动画 ----
+      const applyArt = (a: Art3D) => {
+        const bg = makeFaceGeometry(a.shape)
+        const fg = makeFaceGeometry(a.shape)
+        const eg = makeEdgeGeometry(a.shape)
+        back.geometry = bg
+        front.geometry = fg
+        edge.geometry = eg
+        backGeo.dispose()
+        frontGeo.dispose()
+        edgeGeo.dispose()
+        backGeo = bg
+        frontGeo = fg
+        edgeGeo = eg
 
-      const state = {
-        tiltX: 0,
-        tiltY: 0,
-        pointerX: 0,
-        pointerY: 0,
+        // 纹理加载完成后热替换；加载期间旧纹理继续显示（预加载后近零等待）
+        const swapFlat = (t: THREE.Texture) => {
+          setTexParams(t, true)
+          tex.flat?.dispose()
+          tex.flat = t
+          mats.back.map = t
+          mats.back.needsUpdate = true
+        }
+        const swapNormal = (t: THREE.Texture) => {
+          setTexParams(t, false)
+          tex.normal?.dispose()
+          tex.normal = t
+        }
+        loader.load(a.flat, swapFlat, undefined, (e) => console.error('纹理加载失败:', e))
+        loader.load(a.normal, swapNormal, undefined, (e) => console.error('法线加载失败:', e))
+
+        // 换镜入场：从略低处升起
+        drop.from = -0.35
+        drop.to = 0
+        drop.t0 = performance.now()
       }
+
+      const applyMode = (m: 'pbr' | 'toon') => {
+        const old = [mats.back, mats.edge, mats.front]
+        mats = buildMaterials(m)
+        back.material = mats.back
+        edge.material = mats.edge
+        front.material = mats.front
+        old.forEach((mm) => mm.dispose())
+      }
+
+      // ---- 翻面 / 入场（按时间参数化，与帧率解耦）----
+      const flip = { value: 0, from: 0, to: 0, t0: -1 }
+      const drop = { value: 0, from: -0.35, to: 0, t0: 0 }
+      const setFlipped = (f: boolean) => {
+        flip.from = flip.to
+        flip.to = f ? Math.PI : 0
+        flip.t0 = performance.now()
+      }
+      api.current = { applyArt, applyMode, setFlipped }
+      applyArt(art)
+
+      const tilt = { x: 0, y: 0, px: 0, py: 0 }
       const onPointer = (e: PointerEvent) => {
-        state.pointerX = (e.clientX / window.innerWidth) * 2 - 1
-        state.pointerY = (e.clientY / window.innerHeight) * 2 - 1
+        tilt.px = (e.clientX / window.innerWidth) * 2 - 1
+        tilt.py = (e.clientY / window.innerHeight) * 2 - 1
       }
       const onClick = () => {
         if (controlled) return
-        anim.current = { from: target.current, to: target.current === 0 ? Math.PI : 0, t0: performance.now() }
-        target.current = anim.current.to
+        setFlipped(flip.to === 0)
       }
       window.addEventListener('pointermove', onPointer)
       if (!controlled) canvas.addEventListener('click', onClick)
@@ -189,16 +249,16 @@ export default function Mirror3D({ art, flipped, mode = 'pbr', className }: Mirr
 
       let raf = 0
       const tick = () => {
-        // 翻面：固定时长 ease-out cubic，与帧率无关
-        const p = Math.min(1, (performance.now() - anim.current.t0) / 650)
-        const eased = 1 - (1 - p) ** 3
-        const flip = anim.current.from + (anim.current.to - anim.current.from) * eased
-        state.tiltX += (state.pointerY * -0.16 - state.tiltX) * 0.06
-        state.tiltY += (state.pointerX * 0.2 - state.tiltY) * 0.06
-        mirror.rotation.y = flip + state.tiltY
-        mirror.rotation.x = state.tiltX
-        key.position.x = -2 + state.pointerX * 1.6
-        key.position.y = 2.4 - state.pointerY * 1.2
+        const now = performance.now()
+        const fp = Math.min(1, (now - flip.t0) / FLIP_MS)
+        flip.value = flip.from + (flip.to - flip.from) * (1 - (1 - fp) ** 3)
+        const dp = Math.min(1, (now - drop.t0) / DROP_MS)
+        drop.value = drop.from + (drop.to - drop.from) * (1 - (1 - dp) ** 3)
+        tilt.x += (tilt.py * -0.12 - tilt.x) * 0.06
+        tilt.y += (tilt.px * 0.16 - tilt.y) * 0.06
+        disc.position.y = MIRROR_Y + drop.value
+        disc.rotation.y = flip.value + tilt.y
+        disc.rotation.x = tilt.x
         renderer.render(scene, camera)
         raf = requestAnimationFrame(tick)
       }
@@ -210,15 +270,15 @@ export default function Mirror3D({ art, flipped, mode = 'pbr', className }: Mirr
         window.removeEventListener('resize', resize)
         if (!controlled) canvas.removeEventListener('click', onClick)
         pmrem.dispose()
-        flatMap.dispose()
-        normalMap.dispose()
+        tex.flat?.dispose()
+        tex.normal?.dispose()
         gradientMap?.dispose()
         backGeo.dispose()
         frontGeo.dispose()
         edgeGeo.dispose()
-        backMat.dispose()
-        edgeMat.dispose()
-        frontMat.dispose()
+        mats.back.dispose()
+        mats.edge.dispose()
+        mats.front.dispose()
         envTex.dispose()
         renderer.dispose()
       }
@@ -227,7 +287,9 @@ export default function Mirror3D({ art, flipped, mode = 'pbr', className }: Mirr
     }
 
     return () => dispose?.()
-  }, [art, mode, controlled])
+    // 场景只初始化一次；art/mode 变化走上方 applyArt/applyMode 热替换，controlled 在使用点恒定
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [controlled])
 
   return <canvas ref={canvasRef} className={className} />
 }

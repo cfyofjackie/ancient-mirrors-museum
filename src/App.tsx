@@ -59,6 +59,17 @@ export default function App() {
     }
   }, [go])
 
+  // 预热全部 3D 纹理（浏览器缓存），切换朝代时纹理近零等待
+  useEffect(() => {
+    mirrors.forEach((m) => {
+      if (!m.art3d) return
+      ;[m.art3d.flat, m.art3d.normal].forEach((u) => {
+        const img = new Image()
+        img.src = u
+      })
+    })
+  }, [])
+
   const mirror = mirrors[index]
 
   const sheetContent: SheetContent | null = (() => {
