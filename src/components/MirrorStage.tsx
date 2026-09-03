@@ -72,55 +72,52 @@ export default function MirrorStage({ mirror, direction, onSwitch, onHotspotOpen
 
   return (
     <div className="mirror-stage">
-      {use3D && mirror.art3d ? (
-        /* 3D 模式：Mirror3D 常驻（渲染器不重建），切换朝代 = 纹理热替换 + 镜体升起动画；
-           拖拽/翻面手势挂在镜像盒上，热点层随 flipped 显隐 */
-        <motion.div
-          className="mirror-slide"
-          drag="y"
-          dragConstraints={{ top: 0, bottom: 0 }}
-          dragElastic={0.35}
-          onDragEnd={handleDragEnd}
-          onTap={handleTap}
-        >
-          <div className="mirror-3d-wrap">
-            <Mirror3D art={mirror.art3d} flipped={flipped} />
-            {!flipped && (
-              <div className="hotspot-layer">
-                <AnimatePresence>
-                  {showHotspots &&
-                    mirror.hotspots.map((h, i) => (
-                      <HotspotComponent key={h.title} hotspot={h} index={i} onOpen={() => onHotspotOpen(h)} />
-                    ))}
-                </AnimatePresence>
-              </div>
-            )}
+      {/* 手势层：覆盖整个舞台区域——滑动/点击任意位置都可翻页，不局限于镜子本体 */}
+      <motion.div
+        className="stage-gesture"
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={0.35}
+        onDragEnd={handleDragEnd}
+        onTap={handleTap}
+      >
+        {use3D && mirror.art3d ? (
+          /* 3D 模式：Mirror3D 常驻（渲染器不重建），切换朝代 = 纹理热替换 + 镜体升起动画 */
+          <div className="mirror-slide">
+            <div className="mirror-3d-wrap">
+              <Mirror3D art={mirror.art3d} flipped={flipped} />
+              {!flipped && (
+                <div className="hotspot-layer">
+                  <AnimatePresence>
+                    {showHotspots &&
+                      mirror.hotspots.map((h, i) => (
+                        <HotspotComponent key={h.title} hotspot={h} index={i} onOpen={() => onHotspotOpen(h)} />
+                      ))}
+                  </AnimatePresence>
+                </div>
+              )}
+            </div>
           </div>
-        </motion.div>
-      ) : (
-        /* CSS 平面回退：保留滑动交叉过渡 */
-        <AnimatePresence custom={direction} initial={false} mode="popLayout">
-          <motion.div
-            key={mirror.id}
-            className="mirror-slide"
-            custom={direction}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
-            drag="y"
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={0.35}
-            onDragEnd={handleDragEnd}
-            onTap={handleTap}
-          >
-            <MirrorFlip mirror={mirror} flipped={flipped} />
-          </motion.div>
-        </AnimatePresence>
-      )}
+        ) : (
+          /* CSS 平面回退：保留滑动交叉过渡 */
+          <AnimatePresence custom={direction} initial={false} mode="popLayout">
+            <motion.div
+              key={mirror.id}
+              className="mirror-slide"
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
+            >
+              <MirrorFlip mirror={mirror} flipped={flipped} />
+            </motion.div>
+          </AnimatePresence>
+        )}
+      </motion.div>
 
-      {/* 桌面端切换按钮（触屏设备隐藏，CSS 控制） */}
+      {/* 桌面端切换按钮（触屏设备隐藏，CSS 控制）；位于手势层之上，点击不触发翻面 */}
       <div className="stage-nav">
         <button type="button" className="nav-btn" onClick={() => onSwitch(-1)} aria-label="上一个朝代">
           ↑

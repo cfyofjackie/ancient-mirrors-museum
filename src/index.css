@@ -125,6 +125,21 @@ body {
   container-type: size;
 }
 
+/* 手势层：覆盖整个舞台（滑动/点击任意位置翻页），镜子居中于本层 */
+.stage-gesture {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  cursor: grab;
+}
+
+.stage-gesture:active {
+  cursor: grabbing;
+}
+
 /* AnimatePresence popLayout 模式下，退场元素会被取出文档流居中叠放 */
 .mirror-slide {
   display: flex;
@@ -171,6 +186,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  /* 高于手势层：按钮点击不触发翻面/拖拽 */
+  z-index: 3;
 }
 
 .nav-btn {
