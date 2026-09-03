@@ -59,7 +59,7 @@ docs/screenshots/  # README 展示图
 
 ## 性能修复（2026-09-03）
 
-本地已修复可见内容瞬移、短滑无响应与按钮命中；3D 改为按需绘制，纹理加载去重并补全法线贴图绑定。当前进展与验证见 [修复记录](docs/performance-fix-2026-09-03.md)，原始故障证据见 [诊断报告](docs/performance-diagnosis-2026-09-03.md)。手机真机验收后再更新线上版本。
+已修复可见内容瞬移、短滑无响应与按钮命中；3D 改为按需绘制，纹理加载去重并补全法线贴图绑定。当前进展与验证见 [修复记录](docs/performance-fix-2026-09-03.md)，原始故障证据见 [诊断报告](docs/performance-diagnosis-2026-09-03.md)。用户本地手机体验验收通过，已部署到 [GitHub Pages 线上展览](https://cfyofjackie.github.io/ancient-mirrors-museum/)。
 
 ## 开发进度
 

@@ -9,7 +9,7 @@
 - `docs/performance-diagnosis-2026-09-03.md`：修复前证据（历史快照）。
 - `docs/performance-fix-2026-09-03.md`：修复设计、测试结果和待验收项。
 
-用户手机体验验收已通过，GitHub Pages 尚未更新；不要把本地修复状态误当成已上线。
+用户手机体验验收已通过。2026-09-03 已将修复提交 `b8f4a18` 推送到 `main` 并部署 GitHub Pages：[线上展览](https://cfyofjackie.github.io/ancient-mirrors-museum/)。Pages 部署任务成功，线上资源指纹与本地构建一致；手机尺寸下四朝循环与页脚可见性检查通过。
 
 用户已反馈手机翻页不卡。Firefox 曾出现首屏文字在屏外，重新打开同构建检查入口后恢复正常，真机高度数据通过，用户也确认普通 `/` 刷新后正常；本次没有修改布局，原因未确证。保留 `scripts/diagnostics/layout-server.mjs` 和 `check-layout.mjs` 供再次出现时采集，详见修复报告。
 
@@ -45,7 +45,7 @@ npm run preview
 
 ## 待办
 
-- 手机体验已获用户确认；GitHub Pages 发布待后续执行。
+- GitHub Pages 已发布本次修复，用户接下来复测线上手机体验。
 - 如手机仍掉帧，再用真机数据决定 DPR 和贴图分辨率；目前保持 DPR 上限 2。
 - dist 中仍有未引用的原始大图与高度图，未来离线包需清理；本次没有修改资产目录。
 - 美术与内容原有待办仍见 PROGRESS.md（汉图、美术质感、馆藏图、小红书打包）。
