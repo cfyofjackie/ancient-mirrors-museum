@@ -87,6 +87,8 @@ const mirrors: Mirror[] = [
       title: '商代弦纹镜 · 同类器参考（妇好墓出土）',
       detail:
         '商代弦纹铜镜：镜面微凸，弓形钮，圆钮座，钮座外饰凸弦纹七周，弦纹间有放射状短线。同类镜出土于河南安阳殷墟妇好墓——墓主为商王武丁的王后妇好，墓内随葬铜镜四面，此为其一。',
+      imageUrl: 'references/shang.webp',
+      imageAlt: '商代弦纹镜（妇好墓出土）实物参考',
     },
     art3d: {
       flat: 'poc3d/shang/string.flat.webp',
@@ -121,6 +123,8 @@ const mirrors: Mirror[] = [
       title: '春秋鸟兽纹镜 · 同类器参考',
       detail:
         '春秋鸟兽纹镜：圆形，镜背中央两枚平行弓形钮。钮上行鹿抬头前伸，钮下飞鸟昂首，左右变形虎纹巨口利爪、饰圆涡纹，长尾呈 S 形下垂外卷。',
+      imageUrl: 'references/chunqiu.webp',
+      imageAlt: '春秋鸟兽纹镜实物参考',
     },
     art3d: {
       flat: 'poc3d/chunqiu/bird.flat.webp',
@@ -156,6 +160,8 @@ const mirrors: Mirror[] = [
       title: '战国曲折雷纹镜 · 同类器参考',
       detail:
         '曲折雷纹镜的主纹以曲折多变的雷纹为设计核心，源于商周青铜器上常见的勾连雷纹——繁复而富有动感的线条，展现古人对于自然界的敬畏与崇拜。',
+      imageUrl: 'references/zhanguo.webp',
+      imageAlt: '战国曲折雷纹镜实物参考',
     },
     art3d: {
       flat: 'poc3d/zhanguo/thunder.flat.webp',
@@ -225,6 +231,8 @@ const mirrors: Mirror[] = [
       title: '隋代十二生肖镜 · 同类器参考',
       detail:
         '圆形镜，半球钮，圆钮座上有铭文“光正随人，长命宜新”，字间饰小凸点；外圈十二方格环以云气生肖，最外圈锯齿纹、三角斜缘。同类镜出土于河南陕县刘家渠刘伟墓及陕西西安李静训墓，为隋初新式镜样。',
+      imageUrl: 'references/sui.webp',
+      imageAlt: '隋代十二生肖镜实物参考',
     },
     art3d: {
       flat: 'poc3d/sui/12.flat.webp',
@@ -320,6 +328,8 @@ const mirrors: Mirror[] = [
       title: '元代梵文镜 · 同类器参考',
       detail:
         '梵文准提咒镜盛行于元明，兰札体咒语双圈反向环列。依准提坛法，以未曾用之新镜供于佛像前，持咒一百八遍，以囊盛镜随身——镜子由此成为信仰的法器。',
+      imageUrl: 'references/yuan.webp',
+      imageAlt: '元代梵文镜实物参考',
     },
     art3d: {
       flat: 'poc3d/yuan/fan.flat.webp',
