@@ -15,10 +15,8 @@ export function hasWebGL(): boolean {
 const R = 1.22
 const MIRROR_Y = 0
 const FLIP_MS = 650
-/** 换展两段式动画：旧镜降下（更快、加速）→ 换素材 → 新镜升起（较慢、减速） */
-const LOWER_MS = 170
-const RAISE_MS = 450
-const DROP_HIDDEN = -4.6
+const DROP_MS = 450
+
 const EDGE_COLOR = 0x5a4a30
 const FRONT_COLOR = 0x6b5a3e
 
@@ -198,41 +196,20 @@ export default function Mirror3D({ art, flipped, mode = 'pbr', className }: Mirr
         })
       }
 
-      // ---- 换展两段式：降下 → （回调里换素材）→ 升起；翻转同机制 ----
+      // ---- 翻面 + 入场升起（整页滑动式切换在 App 层，素材替换即时完成）----
       const flip = { value: 0, from: 0, to: 0, t0: -1 }
-      const drop = {
-        value: MIRROR_Y + DROP_HIDDEN,
-        from: MIRROR_Y + DROP_HIDDEN,
-        to: MIRROR_Y,
-        t0: performance.now(),
-        dur: RAISE_MS,
-        onDone: null as null | (() => void),
-      }
-      const animateDrop = (to: number, dur: number, onDone?: () => void) => {
-        drop.from = disc.position.y
-        drop.to = to
-        drop.dur = dur
-        drop.t0 = performance.now()
-        drop.onDone = onDone ?? null
-      }
+      const drop = { value: MIRROR_Y - 0.3, from: MIRROR_Y - 0.3, to: MIRROR_Y, t0: performance.now() }
       const setFlipped = (f: boolean) => {
         flip.from = flip.to
         flip.to = f ? Math.PI : 0
         flip.t0 = performance.now()
       }
       const applyArt = (a: Art3D) => {
-        if (drop.onDone) {
-          // 换展流程进行中：只覆盖最终换入的素材
-          drop.onDone = () => {
-            swapTo(a)
-            animateDrop(MIRROR_Y, RAISE_MS)
-          }
-          return
-        }
-        animateDrop(MIRROR_Y + DROP_HIDDEN, LOWER_MS, () => {
-          swapTo(a)
-          animateDrop(MIRROR_Y, RAISE_MS)
-        })
+        swapTo(a)
+        // 轻微升起入场
+        drop.from = MIRROR_Y - 0.3
+        drop.to = MIRROR_Y
+        drop.t0 = performance.now()
       }
 
       const applyMode = (m: 'pbr' | 'toon') => {
@@ -275,14 +252,9 @@ export default function Mirror3D({ art, flipped, mode = 'pbr', className }: Mirr
           const fp = Math.min(1, (now - flip.t0) / FLIP_MS)
           flip.value = flip.from + (flip.to - flip.from) * (1 - (1 - fp) ** 3)
         }
-        const dp = Math.min(1, (now - drop.t0) / drop.dur)
+        const dp = Math.min(1, (now - drop.t0) / DROP_MS)
         drop.value = drop.from + (drop.to - drop.from) * (dp >= 1 ? 1 : 1 - (1 - dp) ** 3)
         disc.position.y = drop.value
-        if (dp >= 1 && drop.onDone) {
-          const cb = drop.onDone
-          drop.onDone = null
-          cb()
-        }
         tilt.x += (tilt.py * -0.12 - tilt.x) * 0.06
         tilt.y += (tilt.px * 0.16 - tilt.y) * 0.06
         disc.rotation.y = flip.value + tilt.y

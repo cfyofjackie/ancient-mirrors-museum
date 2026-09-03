@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { AnimatePresence, motion, useMotionValue } from 'framer-motion'
+import { animate, motion, useMotionValue } from 'framer-motion'
 import mirrors from './data/mirrors'
 import type { Hotspot } from './data/mirrors'
 import MirrorStage from './components/MirrorStage'
 import InfoCard, { type SheetContent } from './components/InfoCard'
 
-/** 拖动/按钮/键盘切换的冷却时间，避免动画未完成时连跳 */
-const SWITCH_COOLDOWN = 650
-/** 滚轮单独用更长的冷却，吸收触控板连续小滚动 */
-const WHEEL_COOLDOWN = 900
+/** 切换动画：整页滑出 → 即时换素材 → 对侧滑入（一条动画链，方向随滑动） */
+const SWITCH_OUT_MS = 160
+const SWITCH_IN_MS = 280
+const SWITCH_OFFSET = 84
+/** 拖动/按钮/键盘切换进行中的互斥锁 */
 const WHEEL_THRESHOLD = 24
+const WHEEL_COOLDOWN = 900
 /** 停留多久后浮现热点（SLC：1–2 秒，取 1.6s） */
 const HOTSPOT_DWELL = 1600
 
@@ -18,34 +20,75 @@ type Sheet =
   | { type: 'reference' }
   | null
 
-const footerVariants = {
-  enter: (dir: number) => ({ y: dir > 0 ? 18 : -18, opacity: 0 }),
-  center: { y: 0, opacity: 1 },
-  exit: (dir: number) => ({ y: dir > 0 ? -14 : 14, opacity: 0 }),
-}
-
 export default function App() {
   const [index, setIndex] = useState(0)
-  const [direction, setDirection] = useState<1 | -1>(1)
   const [sheet, setSheet] = useState<Sheet>(null)
   const [flipped, setFlipped] = useState(false)
   const [showHotspots, setShowHotspots] = useState(false)
-  const lastSwitch = useRef(0)
-  /** 拖拽跟手位移 + 手势时刻（与 MirrorStage 共享） */
+  const switching = useRef(false)
+  /** 拖拽跟手位移（手势层与整页内容共享） */
   const dragY = useMotionValue(0)
-  const downY = useMotionValue(0)
-  const lastDragEnd = useMotionValue(0)
 
-  // 循环切换（决策 D8）：上滑 = 下一个朝代，下滑 = 上一个；明上滑绕回汉，汉下滑绕到明
-  const go = useCallback((delta: 1 | -1) => {
-    const now = Date.now()
-    if (now - lastSwitch.current < SWITCH_COOLDOWN) return
-    lastSwitch.current = now
-    setSheet(null)
-    setFlipped(false)
-    setDirection(delta)
-    setIndex((i) => (i + delta + mirrors.length) % mirrors.length)
-  }, [])
+  // 切换：整页沿滑动方向滑出 → 即时换素材 → 从对侧滑入落位
+  const go = useCallback(
+    async (delta: 1 | -1) => {
+      if (switching.current) return
+      switching.current = true
+      setSheet(null)
+      setFlipped(false)
+      const out = delta === 1 ? -SWITCH_OFFSET : SWITCH_OFFSET
+      await animate(dragY, out, { duration: SWITCH_OUT_MS / 1000, ease: 'easeIn' })
+      setIndex((i) => (i + delta + mirrors.length) % mirrors.length)
+      dragY.jump(-out)
+      await animate(dragY, 0, { duration: SWITCH_IN_MS / 1000, ease: [0.22, 0.8, 0.36, 1] })
+      switching.current = false
+    },
+    [dragY],
+  )
+
+  // ---- 全屏指针手势：拖拽跟手 + 松手判定（切换 / 回弹 / 点击翻面）----
+  useEffect(() => {
+    let startY = 0
+    let startValue = 0
+    let dragging = false
+    const down = (e: PointerEvent) => {
+      const t = e.target as Element | null
+      // 交互元素（按钮/链接/热点/信息卡）上不启动拖拽
+      if (t?.closest('button, a, .hotspot, .sheet, .sheet-backdrop')) return
+      startY = e.clientY
+      startValue = dragY.get()
+      dragging = true
+    }
+    const move = (e: PointerEvent) => {
+      if (!dragging) return
+      dragY.set(startValue + (e.clientY - startY))
+    }
+    const up = (e: PointerEvent) => {
+      if (!dragging) return
+      dragging = false
+      const dy = e.clientY - startY
+      if (Math.abs(dy) < 12) {
+        // 点击：点在镜子本体上才翻面（热点/按钮由各自处理器负责）
+        const t = e.target as Element | null
+        if (t?.closest('.mirror-3d-wrap') && !t.closest('.hotspot')) setFlipped((v) => !v)
+        animate(dragY, 0, { type: 'spring', stiffness: 520, damping: 42 })
+        return
+      }
+      if (dy < -70) go(1)
+      else if (dy > 70) go(-1)
+      else animate(dragY, 0, { type: 'spring', stiffness: 520, damping: 42 })
+    }
+    window.addEventListener('pointerdown', down)
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', up)
+    return () => {
+      window.removeEventListener('pointerdown', down)
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      window.removeEventListener('pointercancel', up)
+    }
+  }, [dragY, go])
 
   // 桌面端：滚轮 + 键盘方向键
   useEffect(() => {
@@ -89,10 +132,6 @@ export default function App() {
     return () => clearTimeout(timer)
   }, [mirror.id, flipped])
 
-  const toggleFlip = useCallback(() => {
-    setFlipped((v) => !v)
-  }, [])
-
   const sheetContent: SheetContent | null = (() => {
     if (!sheet) return null
     if (sheet.type === 'hotspot') {
@@ -113,18 +152,6 @@ export default function App() {
 
   return (
     <div className="app">
-      <MirrorStage
-        mirror={mirror}
-        flipped={flipped}
-        showHotspots={showHotspots}
-        dragY={dragY}
-        downY={downY}
-        lastDragEnd={lastDragEnd}
-        onToggleFlip={toggleFlip}
-        onHotspotOpen={(hotspot) => setSheet({ type: 'hotspot', hotspot })}
-        onSwitch={go}
-      />
-
       <motion.div className="bg-tint" animate={{ backgroundColor: mirror.tint }} transition={{ duration: 0.9 }} />
 
       <header className="app-header">
@@ -132,38 +159,36 @@ export default function App() {
         <p className="app-subtitle">从一面铜镜，看见不同时代的审美</p>
       </header>
 
-      <footer className="app-footer">
-        <AnimatePresence mode="wait" custom={direction} initial={false}>
-          <motion.div
-            key={mirror.id}
-            className="footer-info"
-            custom={direction}
-            variants={footerVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.18 }}
-          >
-            <div className="dynasty-name">{mirror.dynasty}</div>
-            <div className="mirror-name">{mirror.name}</div>
-            <div className="divider" />
-            <p className="mirror-desc">{mirror.shortDescription}</p>
-          </motion.div>
-        </AnimatePresence>
+      {/* 整页内容容器：镜子与介绍文字共享同一位移，滑动时作为整体联动 */}
+      <motion.div className="page" style={{ y: dragY }}>
+        <MirrorStage
+          mirror={mirror}
+          flipped={flipped}
+          showHotspots={showHotspots}
+          onHotspotOpen={(hotspot) => setSheet({ type: 'hotspot', hotspot })}
+          onSwitch={go}
+        />
 
-        {mirror.reference && (
-          <button type="button" className="ref-entry" onClick={() => setSheet({ type: 'reference' })}>
-            史实资料
-          </button>
-        )}
+        <footer className="app-footer">
+          <div className="dynasty-name">{mirror.dynasty}</div>
+          <div className="mirror-name">{mirror.name}</div>
+          <div className="divider" />
+          <p className="mirror-desc">{mirror.shortDescription}</p>
 
-        <div className="dynasty-dots">
-          {mirrors.map((m) => (
-            <span key={m.id} className={m.id === mirror.id ? 'active' : undefined} />
-          ))}
-        </div>
-        <p className="hint">上下滑动切换朝代 · 点击铜镜翻面</p>
-      </footer>
+          {mirror.reference && (
+            <button type="button" className="ref-entry" onClick={() => setSheet({ type: 'reference' })}>
+              史实资料
+            </button>
+          )}
+
+          <div className="dynasty-dots">
+            {mirrors.map((m) => (
+              <span key={m.id} className={m.id === mirror.id ? 'active' : undefined} />
+            ))}
+          </div>
+          <p className="hint">上下滑动切换朝代 · 点击铜镜翻面</p>
+        </footer>
+      </motion.div>
 
       <InfoCard content={sheetContent} onClose={() => setSheet(null)} />
     </div>

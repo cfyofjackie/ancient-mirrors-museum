@@ -144,6 +144,16 @@ body {
   letter-spacing: 0.12em;
 }
 
+/* 整页内容容器：镜子画布区 + 底部介绍文字，作为整体随滑动联动 */
+.page {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  z-index: 1;
+}
+
 .mirror-stage {
   /* 镜面画布区：flex:1 空带（上下文字之间），镜子恒在此带内居中，不与文字重叠 */
   position: relative;
@@ -155,7 +165,6 @@ body {
   width: 100%;
   /* 尺寸容器：镜面尺寸用 cqw/cqh 按空带实际宽高取比 */
   container-type: size;
-  z-index: 1;
   pointer-events: none;
 }
 
