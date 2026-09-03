@@ -2,6 +2,8 @@
 
 项目：照见千年，四朝铜镜互动展览。Vite / React 18 / TypeScript / Framer Motion / Three.js。顶部标题固定，镜子与底部介绍作为整体翻页。保留全部本地资源与相对路径，后续仍需小红书真机验证。
 
+给 zcode 的简版说明：[本次查到的问题、解决办法与排查过程](docs/zcode-handoff-2026-09-03.md)。用户已确认 GitHub Pages 手机体验正常，首次打开铜镜仍有加载过程。
+
 ## 当前状态
 
 本地已完成翻页断跳、手势和按需渲染修复。分支为 `codex/fix-mirror-transitions`。已完成的诊断和验证见：
