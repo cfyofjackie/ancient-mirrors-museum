@@ -5,10 +5,9 @@ import type { Hotspot } from './data/mirrors'
 import MirrorStage from './components/MirrorStage'
 import InfoCard, { type SheetContent } from './components/InfoCard'
 
-/** 切换动画：整页滑出 → 即时换素材 → 对侧滑入（一条动画链，方向随滑动） */
-const SWITCH_OUT_MS = 160
-const SWITCH_IN_MS = 280
-const SWITCH_OFFSET = 84
+/** 切换动画：整页甩出屏幕外 → 即时换素材 → 对侧滑入（顺着手势方向，幅度按视口高度） */
+const SWITCH_OUT_MS = 150
+const SWITCH_IN_MS = 380
 /** 拖动/按钮/键盘切换进行中的互斥锁 */
 const WHEEL_THRESHOLD = 24
 const WHEEL_COOLDOWN = 900
@@ -31,7 +30,7 @@ export default function App() {
   /** 拖拽跟手位移（手势层与整页内容共享） */
   const dragY = useMotionValue(0)
 
-  // 切换：整页沿滑动方向滑出 → 即时换素材 → 从对侧滑入落位
+  // 切换：整页顺手势甩出屏幕外 → 即时换素材 → 从对侧屏幕外滑入落位
   const go = useCallback(
     async (delta: 1 | -1) => {
       if (switching.current) return
@@ -39,8 +38,9 @@ export default function App() {
       const gen = ++switchGen.current
       setSheet(null)
       setFlipped(false)
-      const out = delta === 1 ? -SWITCH_OFFSET : SWITCH_OFFSET
-      await animate(dragY, out, { duration: SWITCH_OUT_MS / 1000, ease: 'easeIn' })
+      // 甩出方向与手指一致，幅度为视口高度的 55%（全屏级，读作“甩出去”而非“拉回来”）
+      const out = (delta === 1 ? -1 : 1) * Math.round(window.innerHeight * 0.55)
+      await animate(dragY, out, { duration: SWITCH_OUT_MS / 1000, ease: 'easeOut' })
       // 手指中途按下（新一代手势）会中止本序列，由拖拽跟手接管
       if (gen !== switchGen.current) {
         switching.current = false
