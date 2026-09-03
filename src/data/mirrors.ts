@@ -59,7 +59,76 @@ export interface Mirror {
 
 const mirrors: Mirror[] = [
   {
-    id: 'han',
+    id: 'shang',
+    dynasty: '商',
+    name: '弦纹镜',
+    shortDescription:
+      '商代铜镜形制小巧，纹饰只有几圈弦纹——中国铜镜的少年时代，朴素得近乎青涩，却是四千年镜史的起点。',
+    tint: '#4a3b2a',
+    frontImage: 'mirrors/shang/front.webp',
+    backImage: 'mirrors/shang/back.webp',
+    hotspots: [
+      {
+        x: 50,
+        y: 50,
+        title: '弓形钮',
+        description: '商代镜钮多为弓形（桥形），可穿绳持握——镜在当年更是礼器与法器。',
+      },
+      {
+        x: 50,
+        y: 28,
+        title: '同心弦纹',
+        description: '几圈凸起的同心弦纹是商镜几乎唯一的装饰，朴素得近乎抽象。',
+      },
+    ],
+    reference: {
+      title: '商代弦纹镜 · 同类器参考',
+      detail:
+        '商代铜镜出土数量极少，形制小、纹饰简，多圈弦纹是它标志性的语言。这面同类器可见典型的绿锈与同心结构。',
+    },
+    art3d: {
+      flat: 'poc3d/shang/string.flat.webp',
+      normal: 'poc3d/shang/string.normal.webp',
+      shape: { type: 'circle' },
+    },
+  },
+  {
+    id: 'zhanguo',
+    dynasty: '战国',
+    name: '四山纹镜',
+    shortDescription:
+      '战国是铜镜的第一个黄金时代，楚地的山字纹镜最为经典——四个"山"字环绕钮座排列，含义至今没有定论。',
+    tint: '#6b6b3a',
+    frontImage: 'mirrors/zhanguo/front.webp',
+    backImage: 'mirrors/zhanguo/back.webp',
+    hotspots: [
+      {
+        x: 50,
+        y: 50,
+        title: '方格钮座',
+        description: '凹面方格环绕镜钮，与山字纹的斜线形成方圆对比，是战国设计的高度秩序感。',
+      },
+      {
+        x: 50,
+        y: 24,
+        title: '山字纹',
+        description:
+          '三个到六个"山"字对称旋转排列，写的是山、是狩猎工具还是图腾，学界至今争论不休——这正是战国的浪漫。',
+      },
+    ],
+    reference: {
+      title: '战国四山纹镜 · 同类器参考',
+      detail:
+        '山字纹镜是战国楚式镜的代表，以四山最为常见。这面同类器可见典型的绿锈与山字地纹结构。',
+    },
+    art3d: {
+      flat: 'poc3d/zhanguo/thunder.flat.webp',
+      normal: 'poc3d/zhanguo/thunder.normal.webp',
+      shape: { type: 'circle' },
+    },
+  },
+  {
+    id: 'zhanguo',
     dynasty: '汉',
     name: '四神博局纹镜',
     shortDescription:
@@ -91,6 +160,41 @@ const mirrors: Mirror[] = [
       sourceUrl: 'https://clevelandart.org/art/1995.301',
     },
     art3d: { flat: 'poc3d/han/sishou.flat.webp', normal: 'poc3d/han/sishou.normal.webp', shape: { type: 'circle' } },
+  },
+  {
+    id: 'sui',
+    dynasty: '隋',
+    name: '十二生肖镜',
+    shortDescription:
+      '隋代镜面迎来了新的主角：十二生肖环列镜缘——鼠牛虎兔登上了铜镜，人间的时间开始被照进镜子。',
+    tint: '#5f6b62',
+    frontImage: 'mirrors/sui/front.webp',
+    backImage: 'mirrors/sui/back.webp',
+    hotspots: [
+      {
+        x: 50,
+        y: 50,
+        title: '圆钮莲座',
+        description: '镜钮下的莲瓣座透出佛教气息——隋代统一南北，镜上也开始了题材的融合。',
+      },
+      {
+        x: 50,
+        y: 24,
+        title: '十二生肖环',
+        description:
+          '鼠、牛、虎、兔沿镜缘环列一周。生肖与方位、时辰绑定，铜镜第一次成为"时间的容器"。',
+      },
+    ],
+    reference: {
+      title: '隋代十二生肖镜 · 同类器参考',
+      detail:
+        '十二生肖纹饰成熟于隋代镜背，环列镜缘一周。这面同类器可见典型的环状布局与土沁色泽。',
+    },
+    art3d: {
+      flat: 'poc3d/sui/12.flat.webp',
+      normal: 'poc3d/sui/12.normal.webp',
+      shape: { type: 'circle' },
+    },
   },
   {
     id: 'tang',
@@ -150,6 +254,40 @@ const mirrors: Mirror[] = [
         '宋代湖州石家铸镜盛极一时，镜背多铸「湖州真石家念二叔照子」等商标式铭文，是古代早期品牌意识的实物例证。',
     },
     art3d: { flat: 'poc3d/song/kuihua.flat.webp', normal: 'poc3d/song/kuihua.normal.webp', shape: { type: 'lobed', lobes: 8, depth: 0.11 } },
+  },
+  {
+    id: 'yuan',
+    dynasty: '元',
+    name: '梵文镜',
+    shortDescription:
+      '元代铜镜换了一种庇佑方式：两圈梵文准咒环列镜背——照容之外，人们还希望镜子能护身辟邪。',
+    tint: '#2f3a45',
+    frontImage: 'mirrors/yuan/front.webp',
+    backImage: 'mirrors/yuan/back.webp',
+    hotspots: [
+      {
+        x: 50,
+        y: 50,
+        title: '双向梵文环',
+        description: '内外两圈兰札体梵文（准咒）反向环列，是元明梵文镜的典型布局。',
+      },
+      {
+        x: 50,
+        y: 24,
+        title: '圆钮',
+        description: '元代钮座趋于简素，纹饰让位于文字——文字本身就是镜的纹样。',
+      },
+    ],
+    reference: {
+      title: '元代梵文镜 · 同类器参考',
+      detail:
+        '梵文镜盛行于元明，兰札体咒语环列镜背，双圈反向排布。这面同类器为典型的黑漆古质地。',
+    },
+    art3d: {
+      flat: 'poc3d/yuan/fan.flat.webp',
+      normal: 'poc3d/yuan/fan.normal.webp',
+      shape: { type: 'circle' },
+    },
   },
   {
     id: 'ming',
