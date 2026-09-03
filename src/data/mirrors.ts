@@ -63,7 +63,7 @@ const mirrors: Mirror[] = [
     dynasty: '商',
     name: '弦纹镜',
     shortDescription:
-      '商代铜镜形制小巧，纹饰只有几圈弦纹——中国铜镜的少年时代，朴素得近乎青涩，却是四千年镜史的起点。',
+      '商代铜镜形制小巧，纹饰只有几圈弦纹——它的同类，曾随商王武丁的王后妇好深埋地下三千年。',
     tint: '#4a3b2a',
     frontImage: 'mirrors/shang/front.webp',
     backImage: 'mirrors/shang/back.webp',
@@ -82,9 +82,9 @@ const mirrors: Mirror[] = [
       },
     ],
     reference: {
-      title: '商代弦纹镜 · 同类器参考',
+      title: '商代弦纹镜 · 同类器参考（妇好墓出土）',
       detail:
-        '商代铜镜出土数量极少，形制小、纹饰简，多圈弦纹是它标志性的语言。这面同类器可见典型的绿锈与同心结构。',
+        '商代弦纹铜镜：镜面微凸，弓形钮，圆钮座，钮座外饰凸弦纹七周，弦纹间有放射状短线。同类镜出土于河南安阳殷墟妇好墓——墓主为商王武丁的王后妇好，墓内随葬铜镜四面，此为其一。',
     },
     art3d: {
       flat: 'poc3d/shang/string.flat.webp',
@@ -93,11 +93,45 @@ const mirrors: Mirror[] = [
     },
   },
   {
+    id: 'chunqiu',
+    dynasty: '春秋',
+    name: '鸟兽纹镜',
+    shortDescription:
+      '春秋铜镜开始有了“画面”：钮上奔鹿、钮下飞鸟、两侧猛虎张口——铜镜第一次讲起了故事。',
+    tint: '#556055',
+    frontImage: 'mirrors/chunqiu/front.webp',
+    backImage: 'mirrors/chunqiu/back.webp',
+    hotspots: [
+      {
+        x: 50,
+        y: 50,
+        title: '双弓形钮与鹿纹',
+        description: '两枚平行弓形钮上饰奔鹿：抬头前伸、身躯细长——动物第一次成为铜镜的主角。',
+      },
+      {
+        x: 50,
+        y: 26,
+        title: '虎纹与飞鸟',
+        description: '钮下飞鸟昂首回转，左右变形虎纹巨口獠牙、圆涡纹饰身——朴素的线条里全是生命力。',
+      },
+    ],
+    reference: {
+      title: '春秋鸟兽纹镜 · 同类器参考',
+      detail:
+        '春秋鸟兽纹镜：圆形，镜背中央两枚平行弓形钮。钮上行鹿抬头前伸，钮下飞鸟昂首，左右变形虎纹巨口利爪、饰圆涡纹，长尾呈 S 形下垂外卷。',
+    },
+    art3d: {
+      flat: 'poc3d/chunqiu/bird.flat.webp',
+      normal: 'poc3d/chunqiu/bird.normal.webp',
+      shape: { type: 'circle' },
+    },
+  },
+  {
     id: 'zhanguo',
     dynasty: '战国',
-    name: '四山纹镜',
+    name: '曲折雷纹镜',
     shortDescription:
-      '战国是铜镜的第一个黄金时代，楚地的山字纹镜最为经典——四个"山"字环绕钮座排列，含义至今没有定论。',
+      '战国镜纹承商周而来：曲折多变的雷纹布满镜背，源自青铜器上的勾连雷纹——古人对于天地的敬畏与崇拜，铸进了铜里。',
     tint: '#6b6b3a',
     frontImage: 'mirrors/zhanguo/front.webp',
     backImage: 'mirrors/zhanguo/back.webp',
@@ -106,20 +140,20 @@ const mirrors: Mirror[] = [
         x: 50,
         y: 50,
         title: '方格钮座',
-        description: '凹面方格环绕镜钮，与山字纹的斜线形成方圆对比，是战国设计的高度秩序感。',
+        description: '凹面方格环绕镜钮，与曲折雷纹的线条形成方圆对比，是战国设计的高度秩序感。',
       },
       {
         x: 50,
         y: 24,
-        title: '山字纹',
+        title: '曲折雷纹',
         description:
-          '三个到六个"山"字对称旋转排列，写的是山、是狩猎工具还是图腾，学界至今争论不休——这正是战国的浪漫。',
+          '主纹以曲折多变的雷纹为核心，源自商周青铜器的勾连雷纹——繁复而富有动感的线条，展现古人对于自然界的敬畏与崇拜。',
       },
     ],
     reference: {
-      title: '战国四山纹镜 · 同类器参考',
+      title: '战国曲折雷纹镜 · 同类器参考',
       detail:
-        '山字纹镜是战国楚式镜的代表，以四山最为常见。这面同类器可见典型的绿锈与山字地纹结构。',
+        '曲折雷纹镜的主纹以曲折多变的雷纹为设计核心，源于商周青铜器上常见的勾连雷纹——繁复而富有动感的线条，展现古人对于自然界的敬畏与崇拜。',
     },
     art3d: {
       flat: 'poc3d/zhanguo/thunder.flat.webp',
@@ -166,7 +200,7 @@ const mirrors: Mirror[] = [
     dynasty: '隋',
     name: '十二生肖镜',
     shortDescription:
-      '隋代镜面迎来了新的主角：十二生肖环列镜缘——鼠牛虎兔登上了铜镜，人间的时间开始被照进镜子。',
+      '隋代镜背多了铭文与生肖：“光正随人，长命宜新”环于钮座，十二生肖环列镜缘——祝愿与时间，一起被照进镜子。',
     tint: '#5f6b62',
     frontImage: 'mirrors/sui/front.webp',
     backImage: 'mirrors/sui/back.webp',
@@ -188,7 +222,7 @@ const mirrors: Mirror[] = [
     reference: {
       title: '隋代十二生肖镜 · 同类器参考',
       detail:
-        '十二生肖纹饰成熟于隋代镜背，环列镜缘一周。这面同类器可见典型的环状布局与土沁色泽。',
+        '圆形镜，半球钮，圆钮座上有铭文“光正随人，长命宜新”，字间饰小凸点；外圈十二方格环以云气生肖，最外圈锯齿纹、三角斜缘。同类镜出土于河南陕县刘家渠刘伟墓及陕西西安李静训墓，为隋初新式镜样。',
     },
     art3d: {
       flat: 'poc3d/sui/12.flat.webp',
@@ -201,7 +235,7 @@ const mirrors: Mirror[] = [
     dynasty: '唐',
     name: '海兽葡萄纹镜',
     shortDescription:
-      '唐代铜镜装饰华丽奔放，海兽与葡萄蔓枝交织成饱满的浮雕，映出盛世的雍容气度。',
+      '唐代铜镜装饰华丽奔放：葡萄寓意多子多福、一本万利，海兽瑞禽穿行蔓枝之间，铸出盛世的雍容气度。',
     tint: '#a8823f',
     frontImage: 'mirrors/tang/front.webp',
     backImage: 'mirrors/tang/back.webp',
@@ -281,7 +315,7 @@ const mirrors: Mirror[] = [
     reference: {
       title: '元代梵文镜 · 同类器参考',
       detail:
-        '梵文镜盛行于元明，兰札体咒语环列镜背，双圈反向排布。这面同类器为典型的黑漆古质地。',
+        '梵文准提咒镜盛行于元明，兰札体咒语双圈反向环列。依准提坛法，以未曾用之新镜供于佛像前，持咒一百八遍，以囊盛镜随身——镜子由此成为信仰的法器。',
     },
     art3d: {
       flat: 'poc3d/yuan/fan.flat.webp',
