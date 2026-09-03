@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, type PanInfo } from 'framer-motion'
 import type { Hotspot, Mirror } from '../data/mirrors'
 import Mirror3D, { hasWebGL } from './Mirror3D'
@@ -10,6 +10,8 @@ const SWIPE_DISTANCE = 70
 const SWIPE_VELOCITY = 350
 /** 停留多久后浮现热点（SLC：1–2 秒，取 1.6s） */
 const HOTSPOT_DWELL = 1600
+/** 点击与滑动的区分阈值：按下到抬起位移超过此值视为滑动，不触发翻面 */
+const TAP_MOVE_THRESHOLD = 12
 
 interface MirrorStageProps {
   mirror: Mirror
@@ -33,19 +35,26 @@ const slideVariants = {
   }),
 }
 
+/** TouchEvent/PointerEvent/MouseEvent 统一取 clientY */
+function clientYOf(e: MouseEvent | TouchEvent | PointerEvent): number {
+  if ('changedTouches' in e && e.changedTouches.length) return e.changedTouches[0].clientY
+  return (e as PointerEvent).clientY
+}
+
 /**
  * 主舞台（决策 D3：上下滑动切换朝代）：
+ * - 手势层覆盖整个视口（含页脚文字区，页脚容器 pointer-events:none、按钮单独恢复）
  * - 拖动时铜镜跟手移动，松手按位移/速度阈值判定切换或回弹
- * - onTap 必须挂在 drag 元素自身：draggable 父元素会抑制子元素的 tap 手势，
- *   且 drag 元素自身的 onTap 自带「未拖动才算 tap」的判定
- * - tap 落在热点上时不翻面（closest 判断走原生 DOM，React 合成层的 stopPropagation 拦不住原生监听）
- * - 渲染：有 3D 素材且 WebGL 可用 → Mirror3D；否则回退 CSS 平面翻面
+ * - 翻面只认「点在镜子上且位移 ≤12px」的点击——滑动切换绝不错触翻面；
+ *   drag 结束后 250ms 内的 tap 一并忽略（framer 偶发同时派发 tap 与 dragEnd）
  */
 export default function MirrorStage({ mirror, direction, onSwitch, onHotspotOpen }: MirrorStageProps) {
   const [flipped, setFlipped] = useState(false)
   const [showHotspots, setShowHotspots] = useState(false)
   const webgl = useMemo(() => hasWebGL(), [])
   const use3D = webgl && !!mirror.art3d
+  const downY = useRef(0)
+  const lastDragEnd = useRef(0)
 
   // 停留 1.6 秒后浮现热点；翻面或换镜后重置，回到镜背重新计时
   useEffect(() => {
@@ -55,13 +64,22 @@ export default function MirrorStage({ mirror, direction, onSwitch, onHotspotOpen
     return () => clearTimeout(timer)
   }, [mirror.id, flipped])
 
+  const handlePointerDown = (e: React.PointerEvent) => {
+    downY.current = e.clientY
+  }
+
   const handleTap = (e?: MouseEvent | TouchEvent | PointerEvent) => {
+    if (Date.now() - lastDragEnd.current < 250) return
     const target = e?.target as Element | undefined
+    // 只有点在镜子本体上才翻面；按钮/热点/空白区域不翻
+    if (!target?.closest?.('.mirror-3d-wrap')) return
     if (target?.closest?.('.hotspot')) return
+    if (e && Math.abs(clientYOf(e) - downY.current) > TAP_MOVE_THRESHOLD) return
     setFlipped((v) => !v)
   }
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
+    lastDragEnd.current = Date.now()
     const { offset, velocity } = info
     if (offset.y < -SWIPE_DISTANCE || velocity.y < -SWIPE_VELOCITY) {
       onSwitch(1)
@@ -71,39 +89,36 @@ export default function MirrorStage({ mirror, direction, onSwitch, onHotspotOpen
   }
 
   return (
-    <div className="mirror-stage">
-      {/* 手势层：覆盖整个舞台区域——滑动/点击任意位置都可翻页，不局限于镜子本体 */}
-      <motion.div
-        className="stage-gesture"
-        drag="y"
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={0.35}
-        onDragEnd={handleDragEnd}
-        onTap={handleTap}
-      >
+    <motion.div
+      className="mirror-stage"
+      drag="y"
+      dragConstraints={{ top: 0, bottom: 0 }}
+      dragElastic={0.35}
+      onDragEnd={handleDragEnd}
+      onTap={handleTap}
+      onPointerDown={handlePointerDown}
+    >
+      <div className="mirror-slide">
         {use3D && mirror.art3d ? (
-          /* 3D 模式：Mirror3D 常驻（渲染器不重建），切换朝代 = 纹理热替换 + 镜体升起动画 */
-          <div className="mirror-slide">
-            <div className="mirror-3d-wrap">
-              <Mirror3D art={mirror.art3d} flipped={flipped} />
-              {!flipped && (
-                <div className="hotspot-layer">
-                  <AnimatePresence>
-                    {showHotspots &&
-                      mirror.hotspots.map((h, i) => (
-                        <HotspotComponent key={h.title} hotspot={h} index={i} onOpen={() => onHotspotOpen(h)} />
-                      ))}
-                  </AnimatePresence>
-                </div>
-              )}
-            </div>
+          <div className="mirror-3d-wrap">
+            <Mirror3D art={mirror.art3d} flipped={flipped} />
+            {!flipped && (
+              <div className="hotspot-layer">
+                <AnimatePresence>
+                  {showHotspots &&
+                    mirror.hotspots.map((h, i) => (
+                      <HotspotComponent key={h.title} hotspot={h} index={i} onOpen={() => onHotspotOpen(h)} />
+                    ))}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
         ) : (
           /* CSS 平面回退：保留滑动交叉过渡 */
           <AnimatePresence custom={direction} initial={false} mode="popLayout">
             <motion.div
               key={mirror.id}
-              className="mirror-slide"
+              className="mirror-slide-inner"
               custom={direction}
               variants={slideVariants}
               initial="enter"
@@ -115,9 +130,9 @@ export default function MirrorStage({ mirror, direction, onSwitch, onHotspotOpen
             </motion.div>
           </AnimatePresence>
         )}
-      </motion.div>
+      </div>
 
-      {/* 桌面端切换按钮（触屏设备隐藏，CSS 控制）；位于手势层之上，点击不触发翻面 */}
+      {/* 上下翻页按钮：全平台常显（滑不动时也有按钮兜底）；位于手势层之上，点击不触发翻面 */}
       <div className="stage-nav">
         <button type="button" className="nav-btn" onClick={() => onSwitch(-1)} aria-label="上一个朝代">
           ↑
@@ -126,6 +141,6 @@ export default function MirrorStage({ mirror, direction, onSwitch, onHotspotOpen
           ↓
         </button>
       </div>
-    </div>
+    </motion.div>
   )
 }

@@ -79,7 +79,7 @@ body {
   z-index: -1;
 }
 
-/* 展墙图已自带光池与暗角，此处仅保留顶/底部文字保护 */
+/* 展墙图已自带光池与暗角，此处仅保留顶/底部文字保护（浮于 3D 场景之上、文字之下） */
 .app::before {
   content: '';
   position: absolute;
@@ -92,11 +92,14 @@ body {
     rgba(10, 13, 16, 0.5) 100%
   );
   pointer-events: none;
-  z-index: -1;
+  z-index: 2;
 }
 
 .app-header {
   text-align: center;
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
 }
 
 .app-title {
@@ -114,14 +117,14 @@ body {
 }
 
 .mirror-stage {
-  position: relative;
-  flex: 1;
+  /* 手势层占满整个视口：全屏任意位置（含页脚文字区）都可滑动翻页；文字浮于其上 */
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 0;
-  width: 100%;
-  /* 尺寸容器：镜面尺寸用 cqw/cqh 按舞台实际宽高取比，保证不侵占上下文字（桌面端溢出修复） */
+  /* 尺寸容器：镜面尺寸用 cqw/cqh 按视口实际宽高取比 */
   container-type: size;
 }
 
@@ -177,7 +180,7 @@ body {
   transform: rotateY(180deg);
 }
 
-/* 桌面端上下切换按钮；触屏设备隐藏（手势为主） */
+/* 桌面端/触屏通用的上下翻页按钮（常显） */
 .stage-nav {
   position: absolute;
   right: 0;
@@ -186,7 +189,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  /* 高于手势层：按钮点击不触发翻面/拖拽 */
+  /* 高于手势层：按钮点击不触发翻面/拖拽；全平台常显（含触屏） */
   z-index: 3;
 }
 
@@ -208,11 +211,7 @@ body {
   border-color: var(--ink-dim);
 }
 
-@media (hover: none) {
-  .stage-nav {
-    display: none;
-  }
-}
+/* 触屏设备也显示翻页按钮（用户反馈：滑不动时需要按钮兜底） */
 
 /* 3D 铜镜容器：热点层与画布同框叠放 */
 .mirror-3d-wrap {
@@ -568,11 +567,19 @@ body {
 }
 
 .app-footer {
+  /* 容器穿透触摸（页脚文字区也能滑动翻页）；交互子元素单独恢复 */
+  pointer-events: none;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 14px;
+  position: relative;
+  z-index: 2;
+}
+
+.ref-entry {
+  pointer-events: auto;
 }
 
 /* 留住退场动画期间的高度，避免底部信息跳动 */
