@@ -48,7 +48,7 @@ export default function App() {
       title: ref.title,
       description: ref.detail,
       imageUrl: ref.imageUrl,
-      imageAlt: `${mirror.name} 馆藏实物参考`,
+      imageAlt: ref.imageAlt ?? `${mirror.name} 馆藏实物参考`,
       source: ref.source,
       sourceUrl: ref.sourceUrl,
       isReference: true,

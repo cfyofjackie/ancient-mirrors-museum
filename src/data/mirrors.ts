@@ -20,6 +20,8 @@ export interface Reference {
   title: string
   detail: string
   imageUrl?: string
+  /** 图片替代文本（缺省用镜名 + 馆藏实物参考） */
+  imageAlt?: string
   source?: string
   sourceUrl?: string
 }
@@ -283,9 +285,11 @@ const mirrors: Mirror[] = [
       },
     ],
     reference: {
-      title: '湖州石家镜 · 馆藏实物图待补',
+      title: '宋 · 葵花形花鸟镜（同类器参考）',
       detail:
-        '宋代湖州石家铸镜盛极一时，镜背多铸「湖州真石家念二叔照子」等商标式铭文，是古代早期品牌意识的实物例证。',
+        '宋代葵花形镜多为黑漆古质地，镜背花卉纹清雅疏朗——与镜缘的葵花瓣形相映成趣。',
+      imageUrl: 'references/song.webp',
+      imageAlt: '宋 · 葵花形花鸟镜 实物参考',
     },
     art3d: { flat: 'poc3d/song/kuihua.flat.webp', normal: 'poc3d/song/kuihua.normal.webp', shape: { type: 'lobed', lobes: 8, depth: 0.11 } },
   },
@@ -348,9 +352,11 @@ const mirrors: Mirror[] = [
       },
     ],
     reference: {
-      title: '五子登科镜 · 馆藏实物图待补',
+      title: '明 · 五子登科镜（同类器参考）',
       detail:
-        '「五子登科」吉祥铭文镜流行于明代，多为圆形圆钮，铭文环钮而铸，寄托科举登第、多子多福的朴素愿望。',
+        '「五子登科」吉祥铭文镜流行于明代，黄铜质地，铭文方框环钮而铸——照见寻常人家对科举登第、多子多福的朴素愿望。',
+      imageUrl: 'references/ming.webp',
+      imageAlt: '明 · 五子登科镜 实物参考',
     },
     art3d: { flat: 'poc3d/ming/wuzidengke.flat.webp', normal: 'poc3d/ming/wuzidengke.normal.webp', shape: { type: 'circle' } },
   },
