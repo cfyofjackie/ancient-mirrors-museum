@@ -296,7 +296,7 @@ const mirrors: Mirror[] = [
       title: '宋 · 葵花型铭纹镜（同类器参考）',
       detail: '待补充',
       imageUrl: 'references/song.webp',
-      imageAlt: '宋 · 葵花形花鸟镜 实物参考',
+      imageAlt: '宋 · 葵花型铭纹镜 实物参考',
     },
     art3d: { flat: 'poc3d/song/kuihua.flat.webp', normal: 'poc3d/song/kuihua.normal.webp', shape: { type: 'lobed', lobes: 8, depth: 0.11 } },
   },
