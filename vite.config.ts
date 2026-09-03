@@ -8,6 +8,7 @@ export default defineConfig({
   publicDir: 'assets',
   plugins: [react()],
   // 另一个项目的 dev server 会动态占用 5273 附近的端口：dev 用 6180，preview 用 6181；strictPort 防止被占时静默跳端口
-  server: { port: 6180, strictPort: true },
-  preview: { port: 6181, strictPort: true },
+  // host: true 允许局域网访问（手机真机调试：http://<电脑IP>:6180）
+  server: { port: 6180, strictPort: true, host: true },
+  preview: { port: 6181, strictPort: true, host: true },
 })
