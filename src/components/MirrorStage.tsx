@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import type { Hotspot, Mirror } from '../data/mirrors'
 import Mirror3D, { hasWebGL } from './Mirror3D'
@@ -12,6 +12,7 @@ interface MirrorStageProps {
   onHotspotOpen: (hotspot: Hotspot) => void
   /** 翻页按钮兜底（全平台常显） */
   onSwitch: (delta: 1 | -1) => void
+  onReady: () => void
 }
 
 /**
@@ -24,30 +25,32 @@ export default function MirrorStage({
   showHotspots,
   onHotspotOpen,
   onSwitch,
+  onReady,
 }: MirrorStageProps) {
   const webgl = useMemo(() => hasWebGL(), [])
-  const use3D = webgl && !!mirror.art3d
+  const [failed, setFailed] = useState(false)
+  const use3D = webgl && !failed && !!mirror.art3d
 
   return (
     <div className="mirror-stage">
       <div className="mirror-slide">
-        {use3D && mirror.art3d ? (
-          <div className="mirror-3d-wrap">
-            <Mirror3D art={mirror.art3d} flipped={flipped} />
-            {!flipped && (
-              <div className="hotspot-layer">
-                <AnimatePresence>
-                  {showHotspots &&
-                    mirror.hotspots.map((h, i) => (
-                      <HotspotComponent key={h.title} hotspot={h} index={i} onOpen={() => onHotspotOpen(h)} />
-                    ))}
-                </AnimatePresence>
-              </div>
-            )}
-          </div>
-        ) : (
-          <MirrorFlip mirror={mirror} flipped={flipped} />
-        )}
+        <div className="mirror-3d-wrap">
+          {use3D && mirror.art3d ? (
+            <Mirror3D art={mirror.art3d} flipped={flipped} onReady={onReady} onError={() => setFailed(true)} />
+          ) : (
+            <MirrorFlip mirror={mirror} flipped={flipped} onReady={onReady} />
+          )}
+          {!flipped && (
+            <div className="hotspot-layer">
+              <AnimatePresence key={mirror.id}>
+                {showHotspots &&
+                  mirror.hotspots.map((h, i) => (
+                    <HotspotComponent key={h.title} hotspot={h} index={i} onOpen={() => onHotspotOpen(h)} />
+                  ))}
+              </AnimatePresence>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 翻页按钮兜底（全平台常显）；点击经由 App 的 window 手势过滤，不会误触翻面 */}

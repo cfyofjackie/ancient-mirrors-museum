@@ -228,6 +228,7 @@ body {
 
 /* 桌面端/触屏通用的上下翻页按钮（常显） */
 .stage-nav {
+  pointer-events: auto;
   position: absolute;
   right: 0;
   top: 50%;
@@ -275,6 +276,29 @@ body {
   /* 触摸事件完整交给手势层（部分移动浏览器默认在 canvas 上启动滚动/缩放手势） */
   touch-action: none;
   /* 不加 drop-shadow：移动端每帧重算阴影是显著性能负载，暗色墙面已能衬出轮廓 */
+}
+
+.mirror-3d-wrap .mirror-face {
+  width: 100%;
+  filter: none;
+}
+
+.mirror-3d-wrap .mirror-perspective {
+  pointer-events: auto;
+}
+
+.page[data-phase='waiting'],
+.page[data-phase='waiting'] * {
+  pointer-events: none;
+}
+
+.loading-notice {
+  position: absolute;
+  top: 40%;
+  color: var(--ink-dim);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  pointer-events: none;
 }
 
 /* ---- 热点（SLC 第三节 3：轻微出现、很淡的呼吸，不闪烁） ---- */

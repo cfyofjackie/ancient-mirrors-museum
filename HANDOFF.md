@@ -1,62 +1,51 @@
-# 交接文档（HANDOFF）
+# 交接文档（2026-09-03 修复版）
 
-> 给接手的 agent/开发者。目标：快速上手，调整"朝代切换"的交互手感。主开发仍由原 agent 继续，本文档聚焦现状与注意点。完整背景见 [PROGRESS.md](PROGRESS.md) 与 [SLC.md](SLC.md)。
+项目：照见千年，四朝铜镜互动展览。Vite / React 18 / TypeScript / Framer Motion / Three.js。顶部标题固定，镜子与底部介绍作为整体翻页。保留全部本地资源与相对路径，后续仍需小红书真机验证。
 
-## 这是什么项目
+## 当前状态
 
-"照见千年"——铜镜 × 朝代审美变化的互动小工具。竖屏移动端优先，最终目标平台是**小红书小工具**（标准 Web 沙箱：**零网络请求**，所有资源本地打包）。
+本地已完成翻页断跳、手势和按需渲染修复。分支为 `codex/fix-mirror-transitions`。已完成的诊断和验证见：
 
-- 技术栈：Vite + React 18 + TS + Framer Motion + three.js（无 UI 框架）
-- 本地运行：`npm run dev` → http://localhost:6180
-- 部署：`npm run deploy`（构建 + 推 gh-pages → https://cfyofjackie.github.io/ancient-mirrors-museum/ ）
-- 页面结构：**标题固定在顶部，铜镜（3D）居中于空带，朝代介绍文字在底部**——不要破坏这个布局
+- `docs/performance-diagnosis-2026-09-03.md`：修复前证据（历史快照）。
+- `docs/performance-fix-2026-09-03.md`：修复设计、测试结果和待验收项。
 
-## 当前状态与正在解决的问题
+用户手机体验验收已通过，GitHub Pages 尚未更新；不要把本地修复状态误当成已上线。
 
-核心功能全部可用：上下滑动切换朝代（循环）、点击镜子翻面、热点说明卡、史实资料卡、翻页按钮兜底。
+用户已反馈手机翻页不卡。Firefox 曾出现首屏文字在屏外，重新打开同构建检查入口后恢复正常，真机高度数据通过，用户也确认普通 `/` 刷新后正常；本次没有修改布局，原因未确证。保留 `scripts/diagnostics/layout-server.mjs` 和 `check-layout.mjs` 供再次出现时采集，详见修复报告。
 
-**未决问题**：用户（小米 13 + Chrome，桌面端同样）感觉**切换朝代的过渡仍然别扭**。近期已做但未达预期的尝试：
+## 关键代码
 
-1. 渲染器常驻 + 纹理 GPU 预热（切换零重建/零解码/零上传）
-2. 换展两段式 3D 动画（旧镜降下→新镜升起）——已删，改由整页滑动过渡
-3. `will-change: transform`、移除 canvas drop-shadow、window 级指针手势
+- `src/App.tsx`：展示、资料卡、翻面状态、热点延时及加载提示。
+- `src/interaction/usePageNavigation.ts`：唯一的翻页/拖动状态控制器，`idle → exiting → waiting → entering → idle`，拖拽可中断过渡；等待素材时只保留最近一次方向。
+- `src/components/MirrorStage.tsx`：3D / CSS 回退、热点与翻页按钮；两条路径均报告素材就绪。
+- `src/components/Mirror3D.tsx`：React 与常驻场景的生命周期桥接。
+- `src/rendering/mirrorScene.ts`：每个 renderer 自己拥有纹理 Promise 缓存、轮廓几何缓存、材质与按需绘制循环；交互结束不持续绘制。
 
-**用户的最新描述**：切换有"翻页感"了（顺方向甩出/滑入），但整体仍偏卡/偏生硬。可能的方向：过渡时长与缓动曲线、甩出/滑入幅度（`SWITCH_OFFSET` 84px 是否太小）、3D 材质参数（金属度过高显"飘"）、或还没找到的未知因素。**欢迎全新思路，不必延续旧路径。**
+## 必须保持的约束
 
-## 关键架构（5 分钟版）
+1. 素材交换时整页 opacity 必须为 0；新镜实际绘制之后才能进入。不要恢复在可见时 `jump()` 到另一侧的逻辑。
+2. 过渡必须有一个写入者。取消依赖控制器和代数失效，不等待已 stop 的动画 Promise。
+3. 不要按朝代 key 重建 renderer。纹理缓存必须包含正在加载的 Promise，并与 renderer 同生命周期；不能把已 dispose 的 Texture 留在跨 renderer 缓存中。
+4. `map` 与 `normalMap` 必须同时应用；只在从无图变成有图时更新 shader 特性。
+5. 静止时不提交新的 3D 帧；翻面/鼠标倾斜/尺寸变化/素材变化触发绘制。触摸拖拽不驱动 3D 倾斜。
+6. StrictMode 在同一个已连接的 canvas 上执行清理再挂载；此时不能 forceContextLoss，否则新场景会误收到 contextlost。真正卸载才释放上下文。
+7. 按钮必须能命中；资料卡打开时屏蔽背景翻页。快速短滑用速度判定，pointercancel 不视为松手提交。
+8. `base: './'` 保持不变，不引入外部 CDN、字体或运行时 API。
 
+## 运行与测试
+
+```powershell
+npm ci --ignore-scripts --no-audit --no-fund
+npm run dev
+npm run build
+npm run preview
 ```
-App.tsx        ← 全屏手势（window 级 pointer 监听 + dragY MotionValue）
-                 go() = 切换编排：整页滑出 → setIndex → 对侧滑入
-MirrorStage    ← 视觉层：.mirror-stage（flex:1 空带）内 canvas + 热点 + 翻页按钮
-Mirror3D       ← three.js 场景（渲染器常驻；纹理缓存 textureCache 已 initTexture 驻留 GPU）
-mirrors.ts     ← 四朝内容数据（文案/热点坐标/art3d 路径）——内容全数据驱动
-```
 
-- **拖拽跟手**：`dragY`（MotionValue）由 App 的 window pointermove 驱动；`.page` 与手势层共享它
-- **切换编排**：`go()` 里 `animate(dragY, …)` 滑出 → `setIndex` → 从对侧滑入；`switchGen` 代数保护防半途打架
-- **翻面判定**：pointerup 时位移 <12px 且 `closest('.mirror-3d-wrap')` → 翻面
-- **纹理热替换**：`textureCache`（URL→Texture，已 initTexture 驻留 GPU），`applyArt` 只换指针
+诊断：`node scripts/diagnostics/server.mjs`（与 dev 共用 6180，先停止其中一个）。入口和判定命令见 `scripts/diagnostics/README.md`。性能页必须在前台运行，手机尺寸不等于手机 GPU。
 
-## 改动时的红线（踩过的坑）
+## 待办
 
-1. **不要恢复"每次切换重建渲染器"**——这是早期卡顿的根因；纹理/几何只做热替换
-2. **`mats.back.needsUpdate = true` 只在 map 从 null→纹理时设置**——每次换纹理都设会强制着色器重编译（切换瞬间大 hitch）
-3. **小红书沙箱零网络请求**——不要引入任何 CDN/外链/在线字体；新资源放 `src/textures/` 或 `assets/`
-4. **单写入者原则**——`dragY` 同一时刻只允许一个来源（拖拽跟手 或 切换动画）；pointerdown 时先 `dragY.stop()`，否则两个动画打架 = 跳帧
-5. **测试陷阱**：内置预览切到后台时 rAF/React 提交会被冻结，一切动态行为"失效"是假象——请在真实前台浏览器验证
-6. 相对路径 `base: './'` 是为 gh-pages 子路径和小红书 zip 服务的，不要改成绝对路径
-
-## 快速验证清单
-
-- [ ] 手机/桌面：任意位置上下滑动 → 翻页，镜+文字整体联动
-- [ ] 点击镜子本体 → 翻面；点镜子外 → 不翻面
-- [ ] 右侧 ↑↓ 按钮 → 切换；"史实资料" → 卡片
-- [ ] 连续快速滑动 → 无跳帧、无卡顿
-- [ ] `npm run build` 通过；`npm run deploy` 后 github.io 正常
-
-## 待办主线（与本次问题无关，供后续）
-
-- 汉·四神博局纹镜按新规范重出图（唐/宋/明已接入）
-- "金过头"材质微调（分区粗糙度：纹样亮、底子哑光）
-- 小红书打包适配 + 真机 webview 验证（R3）
+- 手机体验已获用户确认；GitHub Pages 发布待后续执行。
+- 如手机仍掉帧，再用真机数据决定 DPR 和贴图分辨率；目前保持 DPR 上限 2。
+- dist 中仍有未引用的原始大图与高度图，未来离线包需清理；本次没有修改资产目录。
+- 美术与内容原有待办仍见 PROGRESS.md（汉图、美术质感、馆藏图、小红书打包）。

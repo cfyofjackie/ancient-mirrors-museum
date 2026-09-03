@@ -1,139 +1,41 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { animate, motion, useMotionValue } from 'framer-motion'
+import { useCallback, useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import mirrors from './data/mirrors'
 import type { Hotspot } from './data/mirrors'
 import MirrorStage from './components/MirrorStage'
 import InfoCard, { type SheetContent } from './components/InfoCard'
+import usePageNavigation from './interaction/usePageNavigation'
 
-/** 切换动画：整页甩出屏幕外 → 即时换素材 → 对侧滑入（顺着手势方向，幅度按视口高度） */
-const SWITCH_OUT_MS = 150
-const SWITCH_IN_MS = 380
-/** 拖动/按钮/键盘切换进行中的互斥锁 */
-const WHEEL_THRESHOLD = 24
-const WHEEL_COOLDOWN = 900
-/** 停留多久后浮现热点（SLC：1–2 秒，取 1.6s） */
 const HOTSPOT_DWELL = 1600
-
-type Sheet =
-  | { type: 'hotspot'; hotspot: Hotspot }
-  | { type: 'reference' }
-  | null
+type Sheet = { type: 'hotspot'; hotspot: Hotspot } | { type: 'reference' } | null
 
 export default function App() {
-  const [index, setIndex] = useState(0)
   const [sheet, setSheet] = useState<Sheet>(null)
   const [flipped, setFlipped] = useState(false)
   const [showHotspots, setShowHotspots] = useState(false)
-  const switching = useRef(false)
-  /** 手指按下会使进行中的切换序列失效（代数递增） */
-  const switchGen = useRef(0)
-  /** 拖拽跟手位移（手势层与整页内容共享） */
-  const dragY = useMotionValue(0)
-
-  // 切换：整页顺手势甩出屏幕外 → 即时换素材 → 从对侧屏幕外滑入落位
-  const go = useCallback(
-    async (delta: 1 | -1) => {
-      if (switching.current) return
-      switching.current = true
-      const gen = ++switchGen.current
-      setSheet(null)
-      setFlipped(false)
-      // 甩出方向与手指一致，幅度为视口高度的 55%（全屏级，读作“甩出去”而非“拉回来”）
-      const out = (delta === 1 ? -1 : 1) * Math.round(window.innerHeight * 0.55)
-      await animate(dragY, out, { duration: SWITCH_OUT_MS / 1000, ease: 'easeOut' })
-      // 手指中途按下（新一代手势）会中止本序列，由拖拽跟手接管
-      if (gen !== switchGen.current) {
-        switching.current = false
-        return
-      }
-      setIndex((i) => (i + delta + mirrors.length) % mirrors.length)
-      dragY.jump(-out)
-      await animate(dragY, 0, { duration: SWITCH_IN_MS / 1000, ease: [0.22, 0.8, 0.36, 1] })
-      if (gen === switchGen.current) switching.current = false
-    },
-    [dragY],
-  )
-
-  // ---- 全屏指针手势：拖拽跟手 + 松手判定（切换 / 回弹 / 点击翻面）----
-  useEffect(() => {
-    let startY = 0
-    let startValue = 0
-    let dragging = false
-    const down = (e: PointerEvent) => {
-      const t = e.target as Element | null
-      // 交互元素（按钮/链接/热点/信息卡）上不启动拖拽
-      if (t?.closest('button, a, .hotspot, .sheet, .sheet-backdrop')) return
-      // 手指按下：立即停掉进行中的位移动画——动画写入与拖拽跟手同时写一个值会互相打架（跳帧根源）
-      dragY.stop()
-      switchGen.current++
-      switching.current = false
-      startY = e.clientY
-      startValue = dragY.get()
-      dragging = true
-    }
-    const move = (e: PointerEvent) => {
-      if (!dragging) return
-      dragY.set(startValue + (e.clientY - startY))
-    }
-    const up = (e: PointerEvent) => {
-      if (!dragging) return
-      dragging = false
-      const dy = e.clientY - startY
-      if (Math.abs(dy) < 12) {
-        // 点击：点在镜子本体上才翻面（热点/按钮由各自处理器负责）
-        const t = e.target as Element | null
-        if (t?.closest('.mirror-3d-wrap') && !t.closest('.hotspot')) setFlipped((v) => !v)
-        animate(dragY, 0, { type: 'spring', stiffness: 520, damping: 42 })
-        return
-      }
-      if (dy < -70) go(1)
-      else if (dy > 70) go(-1)
-      else animate(dragY, 0, { type: 'spring', stiffness: 520, damping: 42 })
-    }
-    window.addEventListener('pointerdown', down)
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
-    window.addEventListener('pointercancel', up)
-    return () => {
-      window.removeEventListener('pointerdown', down)
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
-      window.removeEventListener('pointercancel', up)
-    }
-  }, [dragY, go])
-
-  // 桌面端：滚轮 + 键盘方向键
-  useEffect(() => {
-    let lastWheel = 0
-    const onWheel = (e: WheelEvent) => {
-      const now = Date.now()
-      if (Math.abs(e.deltaY) < WHEEL_THRESHOLD || now - lastWheel < WHEEL_COOLDOWN) return
-      lastWheel = now
-      go(e.deltaY > 0 ? 1 : -1)
-    }
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowDown') go(1)
-      else if (e.key === 'ArrowUp') go(-1)
-    }
-    window.addEventListener('wheel', onWheel, { passive: true })
-    window.addEventListener('keydown', onKey)
-    return () => {
-      window.removeEventListener('wheel', onWheel)
-      window.removeEventListener('keydown', onKey)
-    }
-  }, [go])
-
-  // 纹理预热由 Mirror3D 挂载时完成（getTexture + initTexture 直驻 GPU）
-
+  const [waiting, setWaiting] = useState(false)
+  const { index, phase, y, opacity, go, ready } = usePageNavigation({
+    count: mirrors.length,
+    blocked: sheet !== null,
+    onCommit: () => { setSheet(null); setFlipped(false) },
+    onTap: () => setFlipped(value => !value),
+  })
   const mirror = mirrors[index]
+  const onReady = useCallback(() => ready(index), [ready, index])
 
-  // 停留 1.6 秒后浮现热点；翻面或换镜后重置
+  useEffect(() => {
+    setWaiting(false)
+    if (phase !== 'waiting') return
+    const timer = setTimeout(() => setWaiting(true), 350)
+    return () => clearTimeout(timer)
+  }, [phase])
+
   useEffect(() => {
     setShowHotspots(false)
-    if (flipped) return
+    if (flipped || phase !== 'idle') return
     const timer = setTimeout(() => setShowHotspots(true), HOTSPOT_DWELL)
     return () => clearTimeout(timer)
-  }, [mirror.id, flipped])
+  }, [mirror.id, flipped, phase])
 
   const sheetContent: SheetContent | null = (() => {
     if (!sheet) return null
@@ -155,7 +57,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <motion.div className="bg-tint" animate={{ backgroundColor: mirror.tint }} transition={{ duration: 0.9 }} />
+      <div className="bg-tint" style={{ backgroundColor: mirror.tint }} />
 
       <header className="app-header">
         <h1 className="app-title">照见千年</h1>
@@ -163,13 +65,14 @@ export default function App() {
       </header>
 
       {/* 整页内容容器：镜子与介绍文字共享同一位移，滑动时作为整体联动 */}
-      <motion.div className="page" style={{ y: dragY }}>
+      <motion.div className="page" style={{ y, opacity }} data-phase={phase} aria-busy={phase === 'waiting'}>
         <MirrorStage
           mirror={mirror}
           flipped={flipped}
           showHotspots={showHotspots}
           onHotspotOpen={(hotspot) => setSheet({ type: 'hotspot', hotspot })}
           onSwitch={go}
+          onReady={onReady}
         />
 
         <footer className="app-footer">
@@ -192,6 +95,8 @@ export default function App() {
           <p className="hint">上下滑动切换朝代 · 点击铜镜翻面</p>
         </footer>
       </motion.div>
+
+      {waiting && <p className="loading-notice" role="status">正在加载铜镜…</p>}
 
       <InfoCard content={sheetContent} onClose={() => setSheet(null)} />
     </div>
