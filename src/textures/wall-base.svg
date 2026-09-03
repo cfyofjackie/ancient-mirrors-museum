@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1600" preserveAspectRatio="xMidYMid slice">
+  <!--
+    展墙主构图层（无滤镜，栅格化便宜；颗粒由 wall-grain.svg 平铺层负责）
+    层序：底色渐变 → 顶部暖光池 → 右下铜绿 → 金色细线装饰 → 暗角
+    参考位图归档于 assets-src/backgrounds/museum-wall.png
+  -->
+  <defs>
+    <linearGradient id="base" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2b3036"/>
+      <stop offset="0.45" stop-color="#262c33"/>
+      <stop offset="1" stop-color="#171c22"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.05" r="0.8">
+      <stop offset="0" stop-color="#cdba9b" stop-opacity="0.5"/>
+      <stop offset="0.32" stop-color="#a99878" stop-opacity="0.22"/>
+      <stop offset="0.68" stop-color="#8a8272" stop-opacity="0.07"/>
+      <stop offset="1" stop-color="#8a8272" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="patina" cx="0.9" cy="0.98" r="0.38">
+      <stop offset="0" stop-color="#2e5a52" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#2e5a52" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vign" cx="0.5" cy="0.48" r="0.85">
+      <stop offset="0.55" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.4"/>
+    </radialGradient>
+    <pattern id="dots" width="14" height="14" patternUnits="userSpaceOnUse">
+      <circle cx="1.2" cy="1.2" r="1.1" fill="#a3926b"/>
+    </pattern>
+  </defs>
+
+  <rect width="900" height="1600" fill="url(#base)"/>
+  <rect width="900" height="1600" fill="url(#glow)"/>
+  <rect width="900" height="1600" fill="url(#patina)"/>
+
+  <g stroke="#a3926b" fill="none" vector-effect="non-scaling-stroke" stroke-width="1" opacity="0.42">
+    <line x1="72" y1="0" x2="72" y2="336"/>
+    <line x1="72" y1="648" x2="72" y2="1600"/>
+    <line x1="828" y1="120" x2="828" y2="1600" opacity="0.7"/>
+    <line x1="0" y1="102" x2="176" y2="102" opacity="0.5"/>
+    <rect x="72" y="168" width="48" height="160" opacity="0.8"/>
+    <rect x="60" y="700" width="52" height="200" opacity="0.6"/>
+    <rect x="75" y="1298" width="85" height="122" opacity="0.55"/>
+    <path d="M 900 330 A 565 565 0 0 0 900 1430" opacity="0.55"/>
+  </g>
+  <g fill="#a3926b">
+    <rect x="18" y="1088" width="96" height="98" fill="url(#dots)" opacity="0.4"/>
+    <rect x="742" y="1302" width="118" height="88" fill="url(#dots)" opacity="0.28"/>
+    <circle cx="828" cy="160" r="2" opacity="0.55"/>
+    <circle cx="828" cy="1440" r="2" opacity="0.4"/>
+    <rect x="68" y="330" width="8" height="8" opacity="0.5"/>
+    <rect x="824" y="120" width="8" height="8" opacity="0.4"/>
+  </g>
+
+  <rect width="900" height="1600" fill="url(#vign)"/>
+</svg>

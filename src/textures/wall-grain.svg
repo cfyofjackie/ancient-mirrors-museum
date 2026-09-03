@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800">
+  <!-- 颗粒平铺层（亮噪+暗噪，stitchTiles 无缝）。独立小尺寸平铺：栅格成本恒定，不随屏幕放大 -->
+  <defs>
+    <filter id="g" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" stitchTiles="stitch"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.82  0 0 0 0 0.8  0 0 0 0 0.74  0 0 0 0.5 0"/>
+    </filter>
+    <filter id="gd" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" seed="31" stitchTiles="stitch"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.7 0"/>
+    </filter>
+  </defs>
+  <rect width="800" height="800" filter="url(#g)" opacity="0.3"/>
+  <rect width="800" height="800" filter="url(#gd)" opacity="0.32"/>
+</svg>

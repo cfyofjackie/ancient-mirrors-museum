@@ -40,16 +40,16 @@ body,
 }
 
 body {
-  /* 博物馆展墙背景（用户参考图，src/textures/museum-wall.webp）
-     竖屏：高度撑满、水平居中（图比 0.563 > 常见手机屏比，可全覆盖）；
-     横屏：cover 取中上部（光池带），底层渐变补边（取自参考图边缘色） */
+  /* 博物馆展墙背景：程序化重绘。
+     两层拆分控制栅格成本：颗粒为 800px 无缝平铺（成本恒定），主构图为纯渐变+矢量（便宜），
+     避免 cover 大尺寸噪声滤镜拖垮渲染（尤其低端设备软件渲染）。 */
   background-color: var(--bg);
   background-image:
-    url('./textures/museum-wall.webp'),
-    linear-gradient(180deg, #2b2f32 0%, #242a2f 55%, #1a1f24 100%);
-  background-size: auto 100%, 100% 100%;
-  background-position: center top, center;
-  background-repeat: no-repeat, no-repeat;
+    url('./textures/wall-grain.svg'),
+    url('./textures/wall-base.svg');
+  background-size: 800px 800px, cover;
+  background-position: center, center top;
+  background-repeat: repeat, no-repeat;
   color: var(--ink);
   font-family: var(--font-serif);
   -webkit-font-smoothing: antialiased;
@@ -59,13 +59,6 @@ body {
   /* 纵向手势完全让给朝代切换（决策 D3）：页面本身不滚动 */
   touch-action: none;
   overscroll-behavior: none;
-}
-
-@media (orientation: landscape) {
-  body {
-    background-size: cover, 100% 100%;
-    background-position: center 28%, center;
-  }
 }
 
 .app {
@@ -207,9 +200,8 @@ body {
 /* 3D 铜镜容器：热点层与画布同框叠放 */
 .mirror-3d-wrap {
   position: relative;
-  /* 尺寸 = 舞台宽高的 62% 取小者，vh 行是旧浏览器回退 */
-  width: min(62vw, 58vh, 520px);
-  width: min(62cqw, 62cqh, 520px);
+  /* 70cqw 补偿舞台内边距，观感对齐 62vw；62cqh 限制不侵上下文字 */
+  width: min(70cqw, 62cqh, 520px);
   max-height: 100%;
   aspect-ratio: 1;
 }
