@@ -1,7 +1,11 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
+import mirrors from '../data/mirrors'
 import type { Art3D, Shape3D } from '../data/mirrors'
+
+/** 纹理缓存：URL → 已解码并驻留 GPU 的纹理（跨实例共享） */
+const textureCache = new Map<string, THREE.Texture>()
 
 export function hasWebGL(): boolean {
   try {
@@ -116,11 +120,36 @@ export default function Mirror3D({ art, flipped, mode = 'pbr', className }: Mirr
       scene.environment = envTex
 
       const loader = new THREE.TextureLoader()
+      // 纹理缓存：URL → 已解码并驻留 GPU 的纹理（initTexture 预热后，热替换零解码零上传）
+      const getTexture = (url: string, srgb: boolean) =>
+        new Promise<THREE.Texture>((resolve, reject) => {
+          const hit = textureCache.get(url)
+          if (hit) return resolve(hit)
+          loader.load(
+            url,
+            (t) => {
+              setTexParams(t, srgb)
+              textureCache.set(url, t)
+              renderer.initTexture(t) // 强制解码 + GPU 上传，消除切换瞬间的解码/上传 hitch
+              resolve(t)
+            },
+            undefined,
+            (err) => reject(err),
+          )
+        })
       const setTexParams = (t: THREE.Texture, srgb: boolean) => {
         t.anisotropy = renderer.capabilities.getMaxAnisotropy()
         if (srgb) t.colorSpace = THREE.SRGBColorSpace
         return t
       }
+
+      // 预热：全部镜面纹理常驻 GPU
+      mirrors
+        .filter((m) => m.art3d)
+        .forEach((m) => {
+          getTexture(m.art3d!.flat, true).catch(() => {})
+          getTexture(m.art3d!.normal, false).catch(() => {})
+        })
 
       let backGeo = makeFaceGeometry(art.shape)
       let frontGeo = makeFaceGeometry(art.shape)
@@ -167,7 +196,7 @@ export default function Mirror3D({ art, flipped, mode = 'pbr', className }: Mirr
       disc.position.y = MIRROR_Y
       scene.add(disc)
 
-      // 素材替换（在镜体降下后调用）
+      // 素材热替换：纹理取 GPU 缓存（零解码/上传/重编译），几何按需重建
       const swapTo = (a: Art3D) => {
         const bg = makeFaceGeometry(a.shape)
         const fg = makeFaceGeometry(a.shape)
@@ -182,18 +211,25 @@ export default function Mirror3D({ art, flipped, mode = 'pbr', className }: Mirr
         frontGeo = fg
         edgeGeo = eg
 
-        loader.load(a.flat, (t) => {
-          setTexParams(t, true)
-          tex.flat?.dispose()
-          tex.flat = t
-          mats.back.map = t
-          mats.back.needsUpdate = true
-        })
-        loader.load(a.normal, (t) => {
-          setTexParams(t, false)
-          tex.normal?.dispose()
-          tex.normal = t
-        })
+        const hadFlat = !!tex.flat
+        const hadNormal = !!tex.normal
+        const useTex = (slot: 'flat' | 'normal', t: THREE.Texture) => {
+          if (slot === 'flat') {
+            tex.flat = t
+            mats.back.map = t
+            // 仅 null→纹理 的首次赋值需要重编译着色器；已有纹理间互换零重编译
+            if (!hadFlat) mats.back.needsUpdate = true
+          } else {
+            tex.normal = t
+            if (!hadNormal) mats.back.needsUpdate = true
+          }
+        }
+        const hitFlat = textureCache.get(a.flat)
+        const hitNormal = textureCache.get(a.normal)
+        if (hitFlat) useTex('flat', hitFlat)
+        else getTexture(a.flat, true).then((t) => useTex('flat', t)).catch(() => {})
+        if (hitNormal) useTex('normal', hitNormal)
+        else getTexture(a.normal, false).then((t) => useTex('normal', t)).catch(() => {})
       }
 
       // ---- 翻面 + 入场升起（整页滑动式切换在 App 层，素材替换即时完成）----

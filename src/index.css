@@ -144,13 +144,15 @@ body {
   letter-spacing: 0.12em;
 }
 
-/* 整页内容容器：镜子画布区 + 底部介绍文字，作为整体随滑动联动 */
+/* 整页内容容器：镜子画布区 + 底部介绍文字，作为整体随滑动联动。
+   will-change 提升为独立合成层——拖拽/切换的 transform 更新走纯 GPU 合成，不触发内容重绘 */
 .page {
   flex: 1;
   min-height: 0;
   width: 100%;
   display: flex;
   flex-direction: column;
+  will-change: transform;
   z-index: 1;
 }
 
