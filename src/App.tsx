@@ -26,6 +26,8 @@ export default function App() {
   const [flipped, setFlipped] = useState(false)
   const [showHotspots, setShowHotspots] = useState(false)
   const switching = useRef(false)
+  /** 手指按下会使进行中的切换序列失效（代数递增） */
+  const switchGen = useRef(0)
   /** 拖拽跟手位移（手势层与整页内容共享） */
   const dragY = useMotionValue(0)
 
@@ -34,14 +36,20 @@ export default function App() {
     async (delta: 1 | -1) => {
       if (switching.current) return
       switching.current = true
+      const gen = ++switchGen.current
       setSheet(null)
       setFlipped(false)
       const out = delta === 1 ? -SWITCH_OFFSET : SWITCH_OFFSET
       await animate(dragY, out, { duration: SWITCH_OUT_MS / 1000, ease: 'easeIn' })
+      // 手指中途按下（新一代手势）会中止本序列，由拖拽跟手接管
+      if (gen !== switchGen.current) {
+        switching.current = false
+        return
+      }
       setIndex((i) => (i + delta + mirrors.length) % mirrors.length)
       dragY.jump(-out)
       await animate(dragY, 0, { duration: SWITCH_IN_MS / 1000, ease: [0.22, 0.8, 0.36, 1] })
-      switching.current = false
+      if (gen === switchGen.current) switching.current = false
     },
     [dragY],
   )
@@ -55,6 +63,10 @@ export default function App() {
       const t = e.target as Element | null
       // 交互元素（按钮/链接/热点/信息卡）上不启动拖拽
       if (t?.closest('button, a, .hotspot, .sheet, .sheet-backdrop')) return
+      // 手指按下：立即停掉进行中的位移动画——动画写入与拖拽跟手同时写一个值会互相打架（跳帧根源）
+      dragY.stop()
+      switchGen.current++
+      switching.current = false
       startY = e.clientY
       startValue = dragY.get()
       dragging = true
