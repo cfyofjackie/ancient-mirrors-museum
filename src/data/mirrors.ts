@@ -170,7 +170,7 @@ const mirrors: Mirror[] = [
     },
   },
   {
-    id: 'zhanguo',
+    id: 'han',
     dynasty: '汉',
     name: '四神博局纹镜',
     shortDescription:
