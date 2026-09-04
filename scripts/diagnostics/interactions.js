@@ -18,6 +18,13 @@ const swipe = async (dy, cancelled = false) => {
   pointer(cancelled ? 'pointercancel' : 'pointerup',350+dy)
 }
 const settledAt = async name => { await until(()=>idle() && dynasty()===name, `Did not settle on ${name}; got ${dynasty()} / ${page().dataset.phase}`) }
+// 翻页落定后会自动展示自转（热点隐藏、持续绘制）。软件渲染环境下持续绘制会饱和主线程，
+// 各用例开始前先以一次不构成手势的 pointerdown 走真实的"打断自转"路径，保证时序确定性。
+const abortSpin = async () => {
+  document.body.dispatchEvent(new PointerEvent('pointerdown',{pointerId:1,isPrimary:true,button:0,clientX:10,clientY:10,bubbles:true}))
+  document.body.dispatchEvent(new PointerEvent('pointerup',{pointerId:1,isPrimary:true,button:0,clientX:10,clientY:10,bubbles:true}))
+  await delay(400)
+}
 const results = []
 const status = document.createElement('pre')
 status.id='interaction-status'
@@ -30,72 +37,81 @@ const test = async (name, fn) => {
 try {
   await document.fonts.ready
   await delay(3500)
-  await test('navigation buttons receive pointer hits', async () => {
-    for(const button of document.querySelectorAll('.nav-btn')) {
-      const box=button.getBoundingClientRect()
-      assert(document.elementFromPoint(box.x+box.width/2,box.y+box.height/2)===button,'Button is covered or pointer-events disabled')
-    }
-    document.querySelector('[aria-label="下一个朝代"]').click()
-    await settledAt('唐')
-    document.querySelector('[aria-label="上一个朝代"]').click()
-    await settledAt('汉')
+  // 数据现为九朝，按年代排序：商 春秋 战国 汉 隋 唐 宋 元 明（起始商）。
+  await test('wheel navigation switches dynasties both directions', async () => {
+    window.dispatchEvent(new WheelEvent('wheel',{deltaY:120,bubbles:true}))
+    await settledAt('春秋')
+    await delay(700) // 翻页输入 650ms 节流
+    window.dispatchEvent(new WheelEvent('wheel',{deltaY:-120,bubbles:true}))
+    await settledAt('商')
   })
   await test('fast short swipes both directions', async () => {
-    await swipe(-50); await settledAt('唐')
-    await swipe(50); await settledAt('汉')
+    await abortSpin()
+    await swipe(-50); await settledAt('春秋')
+    await swipe(50); await settledAt('商')
   })
   await test('pointercancel restores current page', async () => {
-    await swipe(-120,true); await delay(400); await settledAt('汉')
+    await abortSpin()
+    await swipe(-120,true); await delay(400); await settledAt('商')
   })
   await test('non-primary pointer does not navigate', async () => {
+    await abortSpin()
     pointer('pointerdown',350,{pointerId:2,isPrimary:false})
     pointer('pointermove',180,{pointerId:2,isPrimary:false})
     pointer('pointerup',180,{pointerId:2,isPrimary:false})
-    await delay(500); await settledAt('汉')
+    await delay(500); await settledAt('商')
   })
   await test('horizontal movement is not a tap or a vertical swipe', async () => {
+    await abortSpin()
     pointer('pointerdown',350)
     pointer('pointermove',350,{clientX:innerWidth/2+100})
     pointer('pointerup',350,{clientX:innerWidth/2+100})
-    await delay(750); await settledAt('汉')
+    await delay(750); await settledAt('商')
     if(mirror().tagName==='CANVAS') assert(Math.abs(window.__mirrorProbe.rendererInfo.flip)<.02,'Horizontal drag flipped mirror')
   })
   await test('reverse input during exit keeps the latest intent', async () => {
+    await abortSpin()
     key(1); await delay(40); key(-1)
-    await delay(1100); await settledAt('汉')
+    await delay(1100); await settledAt('商')
   })
   await test('drag interrupts entry without stuck opacity or lock', async () => {
+    await abortSpin()
     key(1)
     await until(()=>page().dataset.phase==='entering','Never entered incoming phase')
-    await swipe(-50); await settledAt('宋')
+    await swipe(-50); await settledAt('战国')
   })
   await test('drag interrupts exit before committing the old direction', async () => {
+    await abortSpin()
     key(1); await delay(40)
-    await swipe(100); await settledAt('唐')
+    await swipe(100); await settledAt('春秋')
   })
   await test('flip reverses and page switch resets to the decorated back', async () => {
+    await abortSpin()
     pointer('pointerdown',350); pointer('pointerup',350)
     await delay(750)
     if(mirror().tagName==='CANVAS' && window.__mirrorProbe.rendererInfo) assert(Math.abs(window.__mirrorProbe.rendererInfo.flip-Math.PI)<.02,'Mirror did not flip')
     else assert(getComputedStyle(document.querySelector('.mirror-flip')).transform!=='none','Fallback did not flip')
     pointer('pointerdown',350); pointer('pointerup',350)
     await delay(100)
-    key(1); await settledAt('宋')
+    key(1); await settledAt('战国')
     await delay(750)
     if(mirror().tagName==='CANVAS' && window.__mirrorProbe.rendererInfo) assert(Math.abs(window.__mirrorProbe.rendererInfo.flip)<.02,'New mirror retained old flip')
   })
   await test('reference sheet blocks background wheel and keyboard navigation', async () => {
+    await abortSpin()
     document.querySelector('.ref-entry').click()
     await until(()=>document.querySelector('.sheet'),'Reference sheet did not open')
     key(1)
     window.dispatchEvent(new WheelEvent('wheel',{deltaY:120,bubbles:true}))
     await delay(500)
-    assert(dynasty()==='宋','Sheet scrolled the background page')
+    assert(dynasty()==='战国','Sheet scrolled the background page')
     document.querySelector('.sheet-close').click()
     await until(()=>!document.querySelector('.sheet'),'Reference sheet did not close')
   })
   await test('hotspots return after navigation and open their information card', async () => {
-    await until(()=>document.querySelector('.hotspot'),'Hotspot did not return',3000)
+    // 展示自转期间热点隐藏；上面的打断路径会让热点在 dwell 后回归
+    await abortSpin()
+    await until(()=>document.querySelector('.hotspot'),'Hotspot did not return',5000)
     document.querySelector('.hotspot').click()
     await until(()=>document.querySelector('.sheet'),'Hotspot card did not open')
     document.querySelector('.sheet-close').click()

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import type { Hotspot, Mirror } from '../data/mirrors'
 import Mirror3D, { hasWebGL } from './Mirror3D'
@@ -10,13 +10,15 @@ interface MirrorStageProps {
   flipped: boolean
   showHotspots: boolean
   onHotspotOpen: (hotspot: Hotspot) => void
-  /** 翻页按钮兜底（全平台常显） */
-  onSwitch: (delta: 1 | -1) => void
+  /** 展示自转请求令牌：每次自增触发一圈 3D 展示自转 */
+  spinToken: number
+  /** 自转结束（含被打断后回正完成）回调 */
+  onSpinEnd: () => void
   onReady: () => void
 }
 
 /**
- * 视觉舞台：镜面画布 + 热点层 + 翻页按钮。
+ * 视觉舞台：镜面画布 + 热点层。
  * 滑动/点击手势由 App 的全屏指针监听负责；本组件只做视觉呈现。
  */
 export default function MirrorStage({
@@ -24,19 +26,32 @@ export default function MirrorStage({
   flipped,
   showHotspots,
   onHotspotOpen,
-  onSwitch,
+  spinToken,
+  onSpinEnd,
   onReady,
 }: MirrorStageProps) {
   const webgl = useMemo(() => hasWebGL(), [])
   const [failed, setFailed] = useState(false)
   const use3D = webgl && !failed && !!mirror.art3d
 
+  useEffect(() => {
+    // 平面回退没有 3D 自转，立即确认结束，上层热点逻辑不等待
+    if (!use3D) onSpinEnd()
+  }, [use3D, onSpinEnd, spinToken])
+
   return (
     <div className="mirror-stage">
       <div className="mirror-slide">
         <div className="mirror-3d-wrap">
           {use3D && mirror.art3d ? (
-            <Mirror3D art={mirror.art3d} flipped={flipped} onReady={onReady} onError={() => setFailed(true)} />
+            <Mirror3D
+              art={mirror.art3d}
+              flipped={flipped}
+              onReady={onReady}
+              onError={() => setFailed(true)}
+              spinToken={spinToken}
+              onSpinEnd={onSpinEnd}
+            />
           ) : (
             <MirrorFlip mirror={mirror} flipped={flipped} onReady={onReady} />
           )}
@@ -51,16 +66,6 @@ export default function MirrorStage({
             </div>
           )}
         </div>
-      </div>
-
-      {/* 翻页按钮兜底（全平台常显）；点击经由 App 的 window 手势过滤，不会误触翻面 */}
-      <div className="stage-nav">
-        <button type="button" className="nav-btn" onClick={() => onSwitch(-1)} aria-label="上一个朝代">
-          ↑
-        </button>
-        <button type="button" className="nav-btn" onClick={() => onSwitch(1)} aria-label="下一个朝代">
-          ↓
-        </button>
       </div>
     </div>
   )

@@ -15,11 +15,13 @@
 
 用户已反馈手机翻页不卡。Firefox 曾出现首屏文字在屏外，重新打开同构建检查入口后恢复正常，真机高度数据通过，用户也确认普通 `/` 刷新后正常；本次没有修改布局，原因未确证。保留 `scripts/diagnostics/layout-server.mjs` 和 `check-layout.mjs` 供再次出现时采集，详见修复报告。
 
+2026-09-03 晚一批小改：翻页落定后铜镜自动"展示自转"一圈（约 9s、ease-in-out、仅一圈，集成在 mirrorScene 的按需渲染里，限 ~30fps；任何 pointerdown/翻面/换素材会中止并回正，期间热点隐藏）；移除右侧 ↑↓ 翻页按钮；朝代圆点改为屏幕右缘垂直居中的纯指示器（不可点击、不随拖拽位移）；底部提示行加大加装饰线。诊断脚本 interactions.js 同步更新（九朝数据顺序、滚轮用例替代按钮用例、用例间中止自转保持时序确定）。注意：`scripts/diagnostics/server.mjs` 默认仍用 6180，被常驻 dev server 占用时可 `DIAG_PORT=其他端口` 运行。
+
 ## 关键代码
 
 - `src/App.tsx`：展示、资料卡、翻面状态、热点延时及加载提示。
 - `src/interaction/usePageNavigation.ts`：唯一的翻页/拖动状态控制器，`idle → exiting → waiting → entering → idle`，拖拽可中断过渡；等待素材时只保留最近一次方向。
-- `src/components/MirrorStage.tsx`：3D / CSS 回退、热点与翻页按钮；两条路径均报告素材就绪。
+- `src/components/MirrorStage.tsx`：3D / CSS 回退与热点层；两条路径均报告素材就绪。
 - `src/components/Mirror3D.tsx`：React 与常驻场景的生命周期桥接。
 - `src/rendering/mirrorScene.ts`：每个 renderer 自己拥有纹理 Promise 缓存、轮廓几何缓存、材质与按需绘制循环；交互结束不持续绘制。
 
@@ -31,7 +33,7 @@
 4. `map` 与 `normalMap` 必须同时应用；只在从无图变成有图时更新 shader 特性。
 5. 静止时不提交新的 3D 帧；翻面/鼠标倾斜/尺寸变化/素材变化触发绘制。触摸拖拽不驱动 3D 倾斜。
 6. StrictMode 在同一个已连接的 canvas 上执行清理再挂载；此时不能 forceContextLoss，否则新场景会误收到 contextlost。真正卸载才释放上下文。
-7. 按钮必须能命中；资料卡打开时屏蔽背景翻页。快速短滑用速度判定，pointercancel 不视为松手提交。
+7. 资料卡打开时屏蔽背景翻页。快速短滑用速度判定，pointercancel 不视为松手提交。（2026-09-03 晚：右侧 ↑↓ 翻页按钮已按需求移除，切换只走滑动/滚轮/键盘手势。）
 8. `base: './'` 保持不变，不引入外部 CDN、字体或运行时 API。
 
 ## 运行与测试

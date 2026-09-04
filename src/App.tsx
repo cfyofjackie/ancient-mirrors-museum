@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import mirrors from './data/mirrors'
 import type { Hotspot } from './data/mirrors'
 import MirrorStage from './components/MirrorStage'
@@ -14,7 +14,12 @@ export default function App() {
   const [flipped, setFlipped] = useState(false)
   const [showHotspots, setShowHotspots] = useState(false)
   const [waiting, setWaiting] = useState(false)
-  const { index, phase, y, opacity, go, ready } = usePageNavigation({
+  // 展示自转：翻页过渡完全落定后请求一圈（令牌自增）；自转期间热点保持隐藏
+  const [spinToken, setSpinToken] = useState(0)
+  const [spinning, setSpinning] = useState(false)
+  const reduced = useReducedMotion()
+  const settledIndex = useRef(0)
+  const { index, phase, y, opacity, ready } = usePageNavigation({
     count: mirrors.length,
     blocked: sheet !== null,
     onCommit: () => { setSheet(null); setFlipped(false) },
@@ -22,6 +27,7 @@ export default function App() {
   })
   const mirror = mirrors[index]
   const onReady = useCallback(() => ready(index), [ready, index])
+  const onSpinEnd = useCallback(() => setSpinning(false), [])
 
   useEffect(() => {
     setWaiting(false)
@@ -30,12 +36,21 @@ export default function App() {
     return () => clearTimeout(timer)
   }, [phase])
 
+  // 回到 idle 且朝代确实变化（真实的滑出→换素材→滑入）时自转一圈；翻面中/减动效偏好时不转
+  useEffect(() => {
+    if (phase !== 'idle' || flipped || reduced) return
+    if (settledIndex.current === index) return
+    settledIndex.current = index
+    setSpinning(true)
+    setSpinToken(token => token + 1)
+  }, [phase, index, flipped, reduced])
+
   useEffect(() => {
     setShowHotspots(false)
-    if (flipped || phase !== 'idle') return
+    if (flipped || phase !== 'idle' || spinning) return
     const timer = setTimeout(() => setShowHotspots(true), HOTSPOT_DWELL)
     return () => clearTimeout(timer)
-  }, [mirror.id, flipped, phase])
+  }, [mirror.id, flipped, phase, spinning])
 
   const sheetContent: SheetContent | null = (() => {
     if (!sheet) return null
@@ -71,7 +86,8 @@ export default function App() {
           flipped={flipped}
           showHotspots={showHotspots}
           onHotspotOpen={(hotspot) => setSheet({ type: 'hotspot', hotspot })}
-          onSwitch={go}
+          spinToken={spinToken}
+          onSpinEnd={onSpinEnd}
           onReady={onReady}
         />
 
@@ -87,14 +103,16 @@ export default function App() {
             </button>
           )}
 
-          <div className="dynasty-dots">
-            {mirrors.map((m) => (
-              <span key={m.id} className={m.id === mirror.id ? 'active' : undefined} />
-            ))}
-          </div>
           <p className="hint">上下滑动切换朝代 · 点击铜镜翻面</p>
         </footer>
       </motion.div>
+
+      {/* 朝代指示器：固定于屏幕右缘垂直居中，不随拖拽/滑动位移；纯指示，不可点击 */}
+      <div className="dynasty-dots" aria-hidden="true">
+        {mirrors.map((m) => (
+          <span key={m.id} className={m.id === mirror.id ? 'active' : undefined} />
+        ))}
+      </div>
 
       {waiting && <p className="loading-notice" role="status">正在加载铜镜…</p>}
 

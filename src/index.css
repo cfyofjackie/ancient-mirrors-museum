@@ -226,40 +226,6 @@ body {
   transform: rotateY(180deg);
 }
 
-/* 桌面端/触屏通用的上下翻页按钮（常显） */
-.stage-nav {
-  pointer-events: auto;
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  /* 高于手势层：按钮点击不触发翻面/拖拽；全平台常显（含触屏） */
-  z-index: 3;
-}
-
-.nav-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 1px solid var(--ink-faint);
-  background: rgba(0, 0, 0, 0.18);
-  color: var(--ink-dim);
-  font-family: var(--font-serif);
-  font-size: 17px;
-  cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
-}
-
-.nav-btn:hover {
-  color: var(--ink);
-  border-color: var(--ink-dim);
-}
-
-/* 触屏设备也显示翻页按钮（用户反馈：滑不动时需要按钮兜底） */
-
 /* 3D 铜镜容器：热点层与画布同框叠放 */
 .mirror-3d-wrap {
   position: relative;
@@ -686,9 +652,19 @@ body {
   max-width: 30em;
 }
 
+/* 朝代指示器：固定于屏幕右缘垂直居中，不随拖拽/滑动位移；纯指示，不可点击。
+   z 层级：3D 场景与文字保护层（z2）之上，InfoCard（z20）之下 */
 .dynasty-dots {
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right));
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 10px;
+  z-index: 3;
+  pointer-events: none;
 }
 
 .dynasty-dots span {
@@ -696,14 +672,28 @@ body {
   height: 6px;
   border-radius: 50%;
   background: var(--ink-faint);
+  transition: opacity 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
 }
 
 .dynasty-dots span.active {
   background: var(--accent);
+  opacity: 1;
+  transform: scale(1.4);
 }
 
 .hint {
-  font-size: 12px;
-  color: var(--ink-faint);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--ink-dim);
   letter-spacing: 0.1em;
+}
+
+.hint::before,
+.hint::after {
+  content: '';
+  width: 24px;
+  height: 1px;
+  background: var(--ink-faint);
 }

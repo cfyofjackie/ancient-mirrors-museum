@@ -5,9 +5,11 @@ import path from 'node:path'
 
 const root = process.cwd()
 const resultDir = path.join(root, 'scripts/diagnostics/results')
+// 默认仍为 6180；被常驻 dev server 占用时可用 DIAG_PORT 换端口运行诊断
+const port = Number(process.env.DIAG_PORT) || 6180
 const server = await createServer({
   root,
-  server: { host: '127.0.0.1', port: 6180, strictPort: true },
+  server: { host: '127.0.0.1', port, strictPort: true },
   plugins: [{
     name: 'local-performance-probe',
     enforce: 'pre',
@@ -19,7 +21,7 @@ const server = await createServer({
       code = code.replace('renderer.initTexture(t)', 'window.__mirrorProbe.measure("initTexture", () => renderer.initTexture(t))')
       code = code.replace('const resource = await prepare(art)', 'if (new URLSearchParams(location.search).has("slow-art") && art.flat.includes("tang")) await new Promise(resolve => setTimeout(resolve, 800)); if (new URLSearchParams(location.search).has("fail-art") && art.flat.includes("tang")) throw new Error("Injected texture failure"); const resource = await prepare(art)')
       code = code.replaceAll('renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))', "renderer.setPixelRatio(new URLSearchParams(location.search).has('dpr2') ? 2 : Math.min(window.devicePixelRatio, 2))")
-      code = code.replace('renderer.render(scene, camera)', 'window.__mirrorProbe.measure("render", () => renderer.render(scene, camera)); window.__mirrorProbe.rendererInfo = { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, textures: renderer.info.memory.textures, programs: renderer.info.programs?.length, normalMap: !!mats.back.normalMap, discY: disc.position.y, flip: flip.value, flat: mats.back.map?.image?.src, canvas: [canvas.width, canvas.height] }')
+      code = code.replace('renderer.render(scene, camera)', 'window.__mirrorProbe.measure("render", () => renderer.render(scene, camera)); window.__mirrorProbe.rendererInfo = { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, textures: renderer.info.memory.textures, programs: renderer.info.programs?.length, normalMap: !!mats.back.normalMap, discY: disc.position.y, flip: flip.value, spin: spin.value, flat: mats.back.map?.image?.src, canvas: [canvas.width, canvas.height] }')
       return code
     },
     configureServer(vite) {

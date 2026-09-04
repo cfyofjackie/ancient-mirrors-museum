@@ -8,6 +8,8 @@ npm run build
 node scripts/diagnostics/server.mjs
 ```
 
+服务器固定 6180 端口（strictPort）。若 6180 被常驻 dev server 占用，可用其他端口运行诊断：`DIAG_PORT=6190 node scripts/diagnostics/server.mjs`（下文地址相应换端口）。
+
 保持测试页在前台，打开下列地址即可自动执行八次输入，约 15 秒后显示结果并保存 JSON 至 `scripts/diagnostics/results/`（原始逐帧数据默认不进版本控制）。不要同时打开多个测试页，切换视口后请重新加载。
 
 - 当前生产构建：`http://127.0.0.1:6180/__production/?perf=fixed-mobile`
