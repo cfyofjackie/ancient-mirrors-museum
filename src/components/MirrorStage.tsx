@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import type { Hotspot, Mirror } from '../data/mirrors'
 import Mirror3D, { hasWebGL } from './Mirror3D'
@@ -10,10 +10,6 @@ interface MirrorStageProps {
   flipped: boolean
   showHotspots: boolean
   onHotspotOpen: (hotspot: Hotspot) => void
-  /** 展示自转请求令牌：每次自增触发一圈 3D 展示自转 */
-  spinToken: number
-  /** 自转结束（含被打断后回正完成）回调 */
-  onSpinEnd: () => void
   onReady: () => void
 }
 
@@ -26,18 +22,11 @@ export default function MirrorStage({
   flipped,
   showHotspots,
   onHotspotOpen,
-  spinToken,
-  onSpinEnd,
   onReady,
 }: MirrorStageProps) {
   const webgl = useMemo(() => hasWebGL(), [])
   const [failed, setFailed] = useState(false)
   const use3D = webgl && !failed && !!mirror.art3d
-
-  useEffect(() => {
-    // 平面回退没有 3D 自转，立即确认结束，上层热点逻辑不等待
-    if (!use3D) onSpinEnd()
-  }, [use3D, onSpinEnd, spinToken])
 
   return (
     <div className="mirror-stage">
@@ -49,8 +38,6 @@ export default function MirrorStage({
               flipped={flipped}
               onReady={onReady}
               onError={() => setFailed(true)}
-              spinToken={spinToken}
-              onSpinEnd={onSpinEnd}
             />
           ) : (
             <MirrorFlip mirror={mirror} flipped={flipped} onReady={onReady} />

@@ -32,6 +32,17 @@ node scripts/diagnostics/check.mjs interactions
 # 全部通过时退出码 0
 ```
 
+## 无头状态分段对照（按需渲染回归）
+
+用无头 Chrome（CDP）自动驱动真实页面，按状态窗口采集 rAF 间隔与 3D 渲染次数，验证"静止零绘制"没有被新功能破坏：
+
+```powershell
+DIAG_PORT=6190 node scripts/diagnostics/server.mjs   # 窗口 1
+node scripts/diagnostics/spin-probe.mjs --label no-spin --url "http://127.0.0.1:6190/?spinlab"   # 窗口 2
+```
+
+脚本依次测量：首镜静止、换页落定后静置、落定后滑动翻页、渲染停止后的静止（泄漏检查）、不换页的小幅滑动；结果 JSON 存至 results，stdout 打印分段对照表。软件渲染的绝对帧率不代表真机，只做相对对比。
+
 性能检查器要求页面可见且完成八次切换，并检查可见内容替换/瞬移。交互检查器读取逐项断言结果。rAF 间隔不等于 GPU 实际呈现时长，函数耗时不等于 GPU 执行时间；真机掉帧须另测。
 
 历史 baseline/full-exit/no-drop/no-render 原始结果保存在 results；这些单变量实验针对旧实现，当前服务器不再改写已删除的旧动画。诊断报告中的旧命令读取的是历史结果，不应当作新版本测试。

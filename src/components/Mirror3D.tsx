@@ -19,10 +19,6 @@ type Props = {
   flipped?: boolean
   mode?: 'pbr' | 'toon'
   className?: string
-  /** 展示自转请求令牌：每次自增触发一圈 3D 展示自转 */
-  spinToken?: number
-  /** 自转结束（含被打断后回正完成）回调 */
-  onSpinEnd?: () => void
   onReady?: () => void
   onError?: () => void
 }
@@ -59,10 +55,6 @@ export default function Mirror3D(props: Props) {
   }, [art])
   useEffect(() => { scene.current?.setMode(mode) }, [mode])
   useEffect(() => { if (flipped !== undefined) scene.current?.setFlipped(flipped) }, [flipped])
-  useEffect(() => {
-    if (!props.spinToken) return
-    scene.current?.startShowcaseSpin(() => latest.current.onSpinEnd?.())
-  }, [props.spinToken])
   return <canvas ref={canvas} className={className} style={{ visibility: displayed === art ? 'visible' : 'hidden' }}
     onClick={() => { if (latest.current.flipped === undefined) scene.current?.toggle() }} />
 }

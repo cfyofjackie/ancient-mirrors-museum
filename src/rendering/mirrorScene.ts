@@ -6,9 +6,6 @@ import type { Art3D, Shape3D } from '../data/mirrors'
 const R = 1.22
 const MIRROR_Y = 0
 const FLIP_MS = 650
-// 展示自转：翻页落定后绕 Y 轴缓动一周；被输入打断时约 300ms 回到背面静止姿态
-const SPIN_MS = 9000
-const SPIN_RETURN_MS = 300
 
 const EDGE_COLOR = 0x5a4a30
 const FRONT_COLOR = 0x6b5a3e
@@ -171,78 +168,28 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
     flip.value = flip.from + (flip.to - flip.from) * (1 - (1 - progress) ** 3)
     if (progress >= 1) flip.start = -1
   }
-  // 展示自转：spin 从 0 缓动到 2π（ease-in-out，只一圈）；被打断时从当前角度缓动回 0。
-  // 与翻转 tween / 倾斜阻尼共用 tick 与按需渲染，不另起渲染循环。
-  type SpinPhase = 'idle' | 'spin' | 'return'
-  let spinPhase: SpinPhase = 'idle'
-  const spin = { value: 0, start: 0, returnFrom: 0, returnStart: 0 }
-  let spinEndCallback: (() => void) | null = null
-  const settleSpin = () => {
-    spinPhase = 'idle'
-    spin.value = 0
-    tilt.px = tilt.py = 0
-    const callback = spinEndCallback
-    spinEndCallback = null
-    callback?.()
-  }
-  const sampleSpin = (now: number) => {
-    if (spinPhase === 'spin') {
-      const progress = Math.min(1, (now - spin.start) / SPIN_MS)
-      spin.value = Math.PI * 2 * (progress < 0.5 ? 2 * progress * progress : 1 - (-2 * progress + 2) ** 2 / 2)
-      if (progress >= 1) settleSpin()
-    } else if (spinPhase === 'return') {
-      const progress = Math.min(1, (now - spin.returnStart) / SPIN_RETURN_MS)
-      spin.value = spin.returnFrom * (1 - (1 - progress) ** 3)
-      if (progress >= 1) settleSpin()
-    }
-  }
-  /** 任何 pointerdown 打断：从当前角度在 ~300ms 内缓动回静止姿态。 */
-  const cancelSpin = () => {
-    if (spinPhase !== 'spin') return
-    spin.returnFrom = spin.value
-    spin.returnStart = performance.now()
-    spinPhase = 'return'
-  }
-  /** 展示自转一圈；翻面中/素材未就绪/已在自转时立即回调，保证上层热点状态一致。 */
-  const startShowcaseSpin = (onEnd?: () => void) => {
-    spinEndCallback = onEnd ?? null
-    if (spinPhase !== 'idle') return
-    if (disposed || !hasArt || desiredFlip) { spinEndCallback = null; onEnd?.(); return }
-    spinPhase = 'spin'
-    spin.start = performance.now()
-    tilt.px = tilt.py = 0
-    invalidate()
-  }
-  const onPointerDownAbortSpin = () => cancelSpin()
   const invalidate = () => {
     if (!raf && !disposed && hasArt && !document.hidden) raf = requestAnimationFrame(tick)
   }
-  let lastSpinFrame = 0
   const tick = () => {
     raf = 0
     if (disposed || !hasArt || document.hidden) return
     const now = performance.now()
     const dt = Math.min(64, now - lastTime)
     lastTime = now
-    const spinning = spinPhase !== 'idle'
-    // 自转是缓慢的展示动画，限到 ~30fps 已足够平滑，显著降低低端设备（软件渲染）负担
-    if (spinning && now - lastSpinFrame < 33) { raf = requestAnimationFrame(tick); return }
-    if (spinning) lastSpinFrame = now
     sampleFlip(now)
-    sampleSpin(now)
     const ease = 1 - Math.exp(-dt / 90)
     tilt.x += (tilt.py - tilt.x) * ease
     tilt.y += (tilt.px - tilt.y) * ease
     const tilting = Math.abs(tilt.py - tilt.x) + Math.abs(tilt.px - tilt.y) > 0.0005
     if (!tilting) { tilt.x = tilt.py; tilt.y = tilt.px }
-    disc.rotation.y = flip.value + tilt.y + spin.value
+    disc.rotation.y = flip.value + tilt.y
     disc.rotation.x = tilt.x
     renderer.render(scene, camera)
-    if (flip.start >= 0 || tilting || spinPhase !== 'idle') invalidate()
+    if (flip.start >= 0 || tilting) invalidate()
   }
   const setFlipped = (value: boolean) => {
     desiredFlip = value
-    cancelSpin() // 自转中翻面：中止自转并快速回正，与翻转 tween 同时进行
     const to = value ? Math.PI : 0
     if (to === flip.to) return
     sampleFlip(performance.now())
@@ -277,8 +224,6 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
     if (firstMaps) mats.back.needsUpdate = true
     back.geometry = front.geometry = resource.geometry.face
     edge.geometry = resource.geometry.edge
-    // 换素材时终止任何进行中的自转（此刻整页 opacity 为 0，直接归位无可见跳变）
-    settleSpin()
     flip.value = flip.from = flip.to = desiredFlip ? Math.PI : 0
     flip.start = -1
     // 首次带贴图的 shader 在显现前准备；此后形状/贴图热替换复用程序。
@@ -330,13 +275,12 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
   resize()
   window.addEventListener('resize', resize)
   window.addEventListener('pointermove', onPointer)
-  window.addEventListener('pointerdown', onPointerDownAbortSpin)
   document.addEventListener('pointerleave', onLeave)
   document.addEventListener('visibilitychange', visibility)
   canvas.addEventListener('webglcontextlost', contextLost)
 
   return {
-    applyArt, setFlipped, setMode, startShowcaseSpin,
+    applyArt, setFlipped, setMode,
     toggle: () => setFlipped(!desiredFlip),
     dispose() {
       disposed = true
@@ -346,7 +290,6 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
       observer.disconnect()
       window.removeEventListener('resize', resize)
       window.removeEventListener('pointermove', onPointer)
-      window.removeEventListener('pointerdown', onPointerDownAbortSpin)
       document.removeEventListener('pointerleave', onLeave)
       document.removeEventListener('visibilitychange', visibility)
       canvas.removeEventListener('webglcontextlost', contextLost)

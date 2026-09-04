@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { motion, useReducedMotion } from 'framer-motion'
+import { useCallback, useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import mirrors from './data/mirrors'
 import type { Hotspot } from './data/mirrors'
 import MirrorStage from './components/MirrorStage'
@@ -14,11 +14,6 @@ export default function App() {
   const [flipped, setFlipped] = useState(false)
   const [showHotspots, setShowHotspots] = useState(false)
   const [waiting, setWaiting] = useState(false)
-  // 展示自转：翻页过渡完全落定后请求一圈（令牌自增）；自转期间热点保持隐藏
-  const [spinToken, setSpinToken] = useState(0)
-  const [spinning, setSpinning] = useState(false)
-  const reduced = useReducedMotion()
-  const settledIndex = useRef(0)
   const { index, phase, y, opacity, ready } = usePageNavigation({
     count: mirrors.length,
     blocked: sheet !== null,
@@ -27,7 +22,6 @@ export default function App() {
   })
   const mirror = mirrors[index]
   const onReady = useCallback(() => ready(index), [ready, index])
-  const onSpinEnd = useCallback(() => setSpinning(false), [])
 
   useEffect(() => {
     setWaiting(false)
@@ -36,21 +30,12 @@ export default function App() {
     return () => clearTimeout(timer)
   }, [phase])
 
-  // 回到 idle 且朝代确实变化（真实的滑出→换素材→滑入）时自转一圈；翻面中/减动效偏好时不转
-  useEffect(() => {
-    if (phase !== 'idle' || flipped || reduced) return
-    if (settledIndex.current === index) return
-    settledIndex.current = index
-    setSpinning(true)
-    setSpinToken(token => token + 1)
-  }, [phase, index, flipped, reduced])
-
   useEffect(() => {
     setShowHotspots(false)
-    if (flipped || phase !== 'idle' || spinning) return
+    if (flipped || phase !== 'idle') return
     const timer = setTimeout(() => setShowHotspots(true), HOTSPOT_DWELL)
     return () => clearTimeout(timer)
-  }, [mirror.id, flipped, phase, spinning])
+  }, [mirror.id, flipped, phase])
 
   const sheetContent: SheetContent | null = (() => {
     if (!sheet) return null
@@ -86,8 +71,6 @@ export default function App() {
           flipped={flipped}
           showHotspots={showHotspots}
           onHotspotOpen={(hotspot) => setSheet({ type: 'hotspot', hotspot })}
-          spinToken={spinToken}
-          onSpinEnd={onSpinEnd}
           onReady={onReady}
         />
 
