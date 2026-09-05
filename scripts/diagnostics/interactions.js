@@ -30,6 +30,23 @@ const test = async (name, fn) => {
 try {
   await document.fonts.ready
   await delay(3500)
+  // 开场序厅（两页手动滑动版）不会自动结束：先用开场自己的手势把它滑完再跑主展厅用例。
+  const openSwipe = async dy => {
+    const root = document.querySelector('.opening-root')
+    if (!root) return
+    const fire = (type, y, tgt) => (tgt || window).dispatchEvent(new PointerEvent(type, { pointerId: 3, isPrimary: true, pointerType: 'touch', button: 0, clientX: innerWidth / 2, clientY: y, bubbles: true }))
+    fire('pointerdown', innerHeight * 0.8, root)
+    await delay(50)
+    fire('pointermove', innerHeight * 0.8 + dy / 2)
+    await delay(50)
+    fire('pointermove', innerHeight * 0.8 + dy)
+    fire('pointerup', innerHeight * 0.8 + dy)
+    await delay(600)
+  }
+  await openSwipe(-150) // 第 1 页 → 第 2 页
+  await openSwipe(-150) // 第 2 页 → 交接进主展厅
+  await until(() => !document.querySelector('.opening-root'), 'Opening overlay did not dismiss after two swipes')
+  await delay(400)
   // 数据现为九朝，按年代排序：商 春秋 战国 汉 隋 唐 宋 元 明（起始商）。
   await test('wheel navigation switches dynasties both directions', async () => {
     window.dispatchEvent(new WheelEvent('wheel',{deltaY:120,bubbles:true}))

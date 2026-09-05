@@ -1,8 +1,8 @@
-/* 开场序厅（OpeningOverlay）时间线（opening/design.md）：
-   0–0.25s 背景建立 → 0.25–1.20s 《磨镜图》浮现 → 0.70–1.35s「以铜为镜」
-   → 1.20–2.55s 叠化《对镜仕女图》→ 1.55–2.30s「可以正衣冠」
-   → 2.55–3.85s 画中镜桥接（WAAPI，组件内测量驱动）→ 3.45–4.05s 遮罩淡出露出主页面。
-   全程只用 opacity / transform（合成层友好）；z-index 高于 InfoCard（z20/21）。 */
+/* 开场序厅（OpeningOverlay）——两页手动滑动版（取代原时间线动画章节）：
+   第 1 页《磨镜图》+「以铜为镜」→ 上滑第 2 页《对镜仕女图》+「可以正衣冠」
+   → 再上滑：页 2 滑出，画中镜桥接层（WAAPI，组件内实测定位）飞向主铜镜 → 遮罩淡出露出主页面。
+   两页共用一条纵向轨道（.opening-track，translateY 由组件内 motion value 驱动：跟手拖拽 + spring 落定/回弹，
+   阈值与主展厅一致）。全程只用 opacity / transform（合成层友好）；z-index 高于 InfoCard（z20/21）。 */
 
 .opening-root {
   position: fixed;
@@ -10,6 +10,10 @@
   z-index: 50;
   overflow: hidden;
   cursor: pointer;
+  /* 开场页内自己管理手势：禁掉浏览器滚动/下拉刷新，避免与页间滑动冲突 */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
   /* 与 body 相同的展墙背景 + 颗粒：开场与主页面同底色，淡出无跳变、无纯黑闪屏 */
   background-color: var(--bg);
   background-image:
@@ -18,10 +22,14 @@
   background-size: 800px 800px, cover;
   background-position: center, center top;
   background-repeat: repeat, no-repeat;
-  animation: open-root-out 0.6s ease 3.45s forwards;
 }
 
-/* 跳过时的快速淡出（清除未走完的时间线动画） */
+/* 进入主展厅：遮罩整体淡出（由组件在交接时刻挂载） */
+.opening-root.is-ending {
+  animation: open-root-out 0.6s ease forwards;
+}
+
+/* 跳过 / 兜底时的快速淡出 */
 .opening-root.is-closing {
   animation: none;
   opacity: 0;
@@ -34,15 +42,25 @@
   }
 }
 
-/* ---- 画卷层：竖版画 contain 式居中（横屏两侧自然露出深色延伸），边缘经渐变遮罩融入背景 ---- */
+/* ---- 两页纵向轨道：每页占满一屏，整条轨道随手指 translateY ---- */
 
-.opening-layer {
+.opening-track {
   position: absolute;
   inset: 0;
   display: flex;
+  flex-direction: column;
+  will-change: transform;
+}
+
+.opening-page {
+  position: relative;
+  flex: 0 0 100%;
+  min-height: 100%;
+  /* 装饰内容不截获事件：手势统一由 .opening-root 的监听处理 */
+  pointer-events: none;
+  display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none;
 }
 
 /* 画框槽位：宽高比锁定 941/1672，宽度受视口宽/高双重约束（含 dvh，避免移动端地址栏跳动） */
@@ -64,66 +82,7 @@
   -webkit-mask-image: radial-gradient(75% 78% at 50% 52%, #000 42%, rgba(0, 0, 0, 0.5) 68%, transparent 92%);
 }
 
-.opening-mojing {
-  animation:
-    open-mojing-in 0.95s cubic-bezier(0.25, 0.6, 0.3, 1) 0.25s both,
-    open-mojing-out 0.9s ease 1.3s forwards;
-}
-
-@keyframes open-mojing-in {
-  from {
-    opacity: 0;
-    transform: translateY(16px) scale(1.03);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes open-mojing-out {
-  to {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-}
-
-.opening-shinv {
-  animation:
-    open-shinv-in 0.9s cubic-bezier(0.25, 0.6, 0.3, 1) 1.2s both,
-    open-shinv-dim 0.95s ease 2.55s forwards;
-}
-
-@keyframes open-shinv-in {
-  from {
-    opacity: 0;
-    transform: translateY(42px) scale(1.02);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-/* 仕女退入背景：保留低透明度残影，遮罩整体淡出时一并退场 */
-@keyframes open-shinv-dim {
-  to {
-    opacity: 0.35;
-  }
-}
-
-/* 画中镜桥接层：初始隐藏；2.55s 起（WAAPI）放大并移向主铜镜落位，轮廓接近时与 3D 镜交叉淡化 */
-.opening-bridge {
-  position: absolute;
-  left: 13.71%;
-  top: 56.76%;
-  width: 25.5%;
-  height: 19.14%;
-  opacity: 0;
-  will-change: transform, opacity;
-}
-
-/* ---- 文案层：真实 HTML 文本，居中，块宽不超屏宽 50% ---- */
+/* ---- 文案层：真实 HTML 文本，居中，块宽不超屏宽 50%；样式沿用原时间线版本 ---- */
 
 .opening-copy {
   position: absolute;
@@ -145,55 +104,72 @@
   margin-left: 0.26em; /* 抵消末字符字距，保持视觉居中 */
   font-weight: 400;
   color: rgba(235, 226, 205, 0.9);
-  animation:
-    open-text-in 0.65s cubic-bezier(0.25, 0.6, 0.3, 1) 0.7s both,
-    open-text-out 0.6s ease 2.55s forwards;
+  white-space: nowrap;
 }
 
-/* 第二行：字号约为第一行 60%、透明度更低、行距由容器 gap 舒展 */
+/* 第 2 页「可以正衣冠」：字号约为第一行 60%、透明度更低，维持原两行层级关系 */
 .opening-line2 {
   font-size: clamp(18px, 4.8vw, 26px);
   letter-spacing: 0.2em;
   margin-left: 0.2em;
+  font-weight: 400;
   color: rgba(210, 202, 185, 0.62);
-  animation:
-    open-text-in 0.75s cubic-bezier(0.25, 0.6, 0.3, 1) 1.55s both,
-    open-text-out 0.6s ease 2.55s forwards;
+  white-space: nowrap;
 }
 
-@keyframes open-text-in {
-  from {
-    opacity: 0;
-    transform: translateY(9px);
+/* ---- 底部轻提示：低调呼吸 ---- */
+
+.opening-hint {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: max(calc(env(safe-area-inset-bottom) + 30px), 5dvh);
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  color: rgba(210, 202, 185, 0.55);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: hint-breathe 2.8s ease-in-out 0.8s infinite;
+}
+
+@keyframes hint-breathe {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.9;
   }
 }
 
-@keyframes open-text-out {
-  to {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
+/* ---- 画中镜桥接层：脱离两页轨道（直接挂在 root 下），平时不可见；
+       交接时刻由组件按实时布局设置 left/top/width/height，WAAPI 驱动飞向主铜镜落位 ---- */
+
+.opening-bridge {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  will-change: transform, opacity;
+  pointer-events: none;
 }
 
-/* ---- prefers-reduced-motion：不做画卷时间线（组件挂 is-reduced），仅背景 + 静态文案快速淡出 ---- */
+/* ---- prefers-reduced-motion：不做两页滑动，仅背景 + 静态文案快速淡出直进主展厅 ---- */
 
-.opening-root.is-reduced .opening-layer {
+.opening-root.is-reduced .opening-track,
+.opening-root.is-reduced .opening-bridge {
   display: none;
 }
 
-.opening-root.is-reduced .opening-line1,
-.opening-root.is-reduced .opening-line2 {
-  animation: none;
-  opacity: 1;
-  transform: none;
+.opening-root.is-reduced .opening-hint {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .opening-root,
-  .opening-mojing,
-  .opening-shinv,
-  .opening-line1,
-  .opening-line2 {
+  .opening-hint {
     animation: none;
   }
 }
