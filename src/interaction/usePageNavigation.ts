@@ -2,8 +2,16 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { animate, useMotionValue, useReducedMotion } from 'framer-motion'
 
 type Direction = 1 | -1
-type Phase = 'idle' | 'dragging' | 'exiting' | 'waiting' | 'entering'
-type Options = { count: number; blocked: boolean; onCommit: () => void; onTap: () => void }
+type Phase = 'idle' | 'dragging' | 'exiting' | 'waiting' | 'entering' | 'handover'
+type Options = {
+  count: number
+  blocked: boolean
+  onCommit: () => void
+  onTap: () => void
+  /** 专属过渡拦截（序厅仕女页 → 商镜三幕交接）：返回 true 表示由外部接管本次翻页，
+   *  控制器进入 handover 相位并锁定，随后由 commitHandover/endHandover 收尾。 */
+  onHandover?: (from: number, delta: Direction) => boolean
+}
 const interactive = 'button, a, input, textarea, select, [contenteditable], .sheet, .sheet-backdrop'
 const editable = 'input, textarea, select, [contenteditable], .sheet'
 
@@ -58,6 +66,13 @@ export default function usePageNavigation(options: Options) {
       queued.current = delta
       return
     }
+    // 专属过渡（三幕交接）：外部接管，控制器锁定在 handover 相位；
+    // y/opacity 不再由本控制器写入，单写入者移交给交接编排。
+    if (latest.current.onHandover?.(current.current, delta)) {
+      queued.current = null
+      changePhase('handover')
+      return
+    }
     changePhase('exiting')
     const distance = reduced ? 0 : Math.min(240, window.innerHeight * 0.24)
     // 从当前拖动位置继续，不把已经拖远的页面拉回。
@@ -77,6 +92,19 @@ export default function usePageNavigation(options: Options) {
   const ready = useCallback((readyIndex: number) => {
     if (readyIndex === current.current && state.current === 'waiting') settle()
   }, [settle])
+
+  /** 三幕交接第二幕：内容切换到目标页（只改页码，不解除锁定，交互仍屏蔽） */
+  const commitHandover = useCallback((target: number) => {
+    current.current = target
+    queued.current = null
+    setIndex(target)
+  }, [])
+
+  /** 三幕交接第三幕结束：解除锁定回到 idle，交互恢复 */
+  const endHandover = useCallback(() => {
+    queued.current = null
+    changePhase('idle')
+  }, [changePhase])
 
   useEffect(() => {
     let pointer: { id: number; x: number; y: number; offset: number; maxDistance: number; tap: boolean; deferred: boolean; samples: Array<{y: number; t: number}> } | null = null
@@ -173,5 +201,5 @@ export default function usePageNavigation(options: Options) {
     }
   }, [changePhase, go, opacity, settle, stop, y])
 
-  return { index, phase, y, opacity, go, ready }
+  return { index, phase, y, opacity, go, ready, commitHandover, endHandover }
 }

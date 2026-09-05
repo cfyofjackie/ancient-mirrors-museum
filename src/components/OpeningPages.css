@@ -1,0 +1,160 @@
+/* 序厅两页（OpeningPages）——已并入主翻页序列（取代一次性遮罩 OpeningOverlay）：
+   磨镜页/仕女页作为序列前两项挂在主页面 .page 位移容器内（position:absolute 铺满），
+   跟手/回弹/翻页过渡与铜镜页共用 usePageNavigation 一套机制，本文件不含任何手势逻辑。
+   仅 opacity / transform / mask（合成层友好）；z 层级：主展厅内容之上、画中镜桥接层（z6）之下。 */
+
+.opening-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  /* 拦截指针：序厅期间不与下方铜镜/热点交互（window 级翻页监听不受影响） */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 非序厅页：整体隐藏（visibility 保留布局，测量槽位仍可用） */
+.opening-layer.is-hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.opening-page {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.opening-page.is-current {
+  display: flex;
+}
+
+/* 画框槽位：宽高比锁定 941/1672，宽度受视口宽/高双重约束（含 dvh，避免移动端地址栏跳动） */
+.painting-slot {
+  position: relative;
+  width: min(86vw, 50dvh);
+  aspect-ratio: 941 / 1672;
+}
+
+.opening-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+  /* 渐变遮罩消除矩形边界（素材本身已做深色融合，此处把四边与四角彻底融进展墙底色） */
+  mask-image: radial-gradient(75% 78% at 50% 52%, #000 42%, rgba(0, 0, 0, 0.5) 68%, transparent 92%);
+  -webkit-mask-image: radial-gradient(75% 78% at 50% 52%, #000 42%, rgba(0, 0, 0, 0.5) 68%, transparent 92%);
+}
+
+/* ---- 文案层：真实 HTML 文本，居中，块宽不超屏宽 50% ---- */
+
+.opening-copy {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: max(24dvh, calc(env(safe-area-inset-top) + 72px));
+  max-width: 50vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(14px, 3dvh, 26px);
+  text-align: center;
+  pointer-events: none;
+}
+
+.opening-line1 {
+  font-size: clamp(30px, 8vw, 44px);
+  letter-spacing: 0.26em;
+  margin-left: 0.26em; /* 抵消末字符字距，保持视觉居中 */
+  font-weight: 400;
+  color: rgba(235, 226, 205, 0.9);
+  white-space: nowrap;
+}
+
+/* 第 2 页「可以正衣冠」：字号约为第一行 60%、透明度更低，维持两行层级关系 */
+.opening-line2 {
+  font-size: clamp(18px, 4.8vw, 26px);
+  letter-spacing: 0.2em;
+  margin-left: 0.2em;
+  font-weight: 400;
+  color: rgba(210, 202, 185, 0.62);
+  white-space: nowrap;
+}
+
+/* ---- 底部轻提示：低调呼吸 ---- */
+
+.opening-hint {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: max(calc(env(safe-area-inset-bottom) + 30px), 5dvh);
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  color: rgba(210, 202, 185, 0.55);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: hint-breathe 2.8s ease-in-out 0.8s infinite;
+}
+
+@keyframes hint-breathe {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .opening-hint {
+    animation: none;
+  }
+}
+
+/* ---- 三幕交接·第一幕「让位」：仕女页内容淡出，画中镜桥接层单独留在画面放大
+       （时长对齐 useHandover HANDOVER.yieldFade = 450ms） ---- */
+
+.opening-layer.is-yielding .opening-img,
+.opening-layer.is-yielding .opening-copy,
+.opening-layer.is-yielding .opening-hint {
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+
+/* ---- 画中镜桥接层：挂在 .page 内（page 坐标系，随页面位移/回落同步移动，恒与铜镜落位对齐），
+       平时不可见；交接第一幕由 useHandover 按实测布局设置 left/top/width/height 并 WAAPI 驱动 ---- */
+
+.handover-bridge {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  z-index: 6;
+  opacity: 0;
+  will-change: transform, opacity;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ---- 三幕交接·第三幕「落定」：铜镜轻微缩放落定（scale 1.02 → 1.0）。
+       动画跨越二/三幕（800ms ≈ HANDOVER.act2 + act3），第三幕末精确到位 ---- */
+
+.mirror-stage.handover-settle .mirror-slide {
+  animation: mirror-settle 0.8s cubic-bezier(0.22, 0.8, 0.36, 1) both;
+}
+
+@keyframes mirror-settle {
+  from {
+    transform: scale(1.02);
+  }
+  to {
+    transform: scale(1);
+  }
+}

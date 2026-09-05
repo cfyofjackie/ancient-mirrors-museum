@@ -31,6 +31,11 @@
     document.body.append(status)
     await document.fonts.ready
     await delay(3500)
+    // 序厅两页已并入翻页序列（index 0/1）：perf 用例先通过三幕交接进入主展厅（商镜）再开始计切换
+    for (let i = 0; i < 3 && document.querySelector('.page')?.dataset.kind === 'opening'; i++) {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+      await delay(2200)
+    }
     if (variant === 'no-grain') document.body.style.backgroundImage = 'none'
     if (variant === 'no-tint') document.querySelector('.bg-tint').style.display = 'none'
     const start = performance.now()

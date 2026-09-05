@@ -30,24 +30,18 @@ const test = async (name, fn) => {
 try {
   await document.fonts.ready
   await delay(3500)
-  // 开场序厅（两页手动滑动版）不会自动结束：先用开场自己的手势把它滑完再跑主展厅用例。
-  const openSwipe = async dy => {
-    const root = document.querySelector('.opening-root')
-    if (!root) return
-    const fire = (type, y, tgt) => (tgt || window).dispatchEvent(new PointerEvent(type, { pointerId: 3, isPrimary: true, pointerType: 'touch', button: 0, clientX: innerWidth / 2, clientY: y, bubbles: true }))
-    fire('pointerdown', innerHeight * 0.8, root)
-    await delay(50)
-    fire('pointermove', innerHeight * 0.8 + dy / 2)
-    await delay(50)
-    fire('pointermove', innerHeight * 0.8 + dy)
-    fire('pointerup', innerHeight * 0.8 + dy)
-    await delay(600)
-  }
-  await openSwipe(-150) // 第 1 页 → 第 2 页
-  await openSwipe(-150) // 第 2 页 → 交接进主展厅
-  await until(() => !document.querySelector('.opening-root'), 'Opening overlay did not dismiss after two swipes')
+  // 序厅两页已并入主翻页序列（index 0/1，与铜镜共用同一手势体系，无遮罩组件）：
+  // 先滑到仕女页，再上滑触发三幕交接进入主展厅（商镜）。
+  assert(document.querySelectorAll('.dynasty-dots span').length === 11, 'Dots indicator is not 11 items')
+  assert(page().dataset.page === '0' && page().dataset.kind === 'opening', 'App did not start on the first opening page')
+  await swipe(-150) // 磨镜页 → 仕女页
+  await until(() => page().dataset.page === '1', 'Did not reach second opening page')
+  await delay(600)
+  await swipe(-150) // 仕女页 → 三幕交接 → 商镜
+  await until(() => page().dataset.page === '2' && page().dataset.kind === 'mirror' && idle(), 'Three-act handover did not land on the hall')
+  await settledAt('商')
   await delay(400)
-  // 数据现为九朝，按年代排序：商 春秋 战国 汉 隋 唐 宋 元 明（起始商）。
+  // 数据现为九朝，按年代排序：商 春秋 战国 汉 隋 唐 宋 元 明（商为序列第 3 项）。
   await test('wheel navigation switches dynasties both directions', async () => {
     window.dispatchEvent(new WheelEvent('wheel',{deltaY:120,bubbles:true}))
     await settledAt('春秋')

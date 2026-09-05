@@ -130,6 +130,23 @@ body {
   pointer-events: none;
 }
 
+/* 序厅两页期间隐藏标题（序厅有自己的文字）；进入商镜页后按 header-enter 淡入 */
+.app-header.header-hidden {
+  opacity: 0;
+}
+
+/* 主标题入场淡入（三幕交接第二幕起由 App 挂载） */
+.app-header.header-enter {
+  animation: header-enter 0.55s ease both;
+}
+
+@keyframes header-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
 .app-title {
   font-size: clamp(26px, 6vw, 34px);
   letter-spacing: 0.35em;
@@ -145,7 +162,8 @@ body {
 }
 
 /* 整页内容容器：镜子画布区 + 底部介绍文字，作为整体随滑动联动。
-   will-change 提升为独立合成层——拖拽/切换的 transform 更新走纯 GPU 合成，不触发内容重绘 */
+   will-change 提升为独立合成层——拖拽/切换的 transform 更新走纯 GPU 合成，不触发内容重绘；
+   position:relative 作为序厅两页（.opening-layer）与画中镜桥接层（.handover-bridge）的定位容器 */
 .page {
   flex: 1;
   min-height: 0;
@@ -154,6 +172,7 @@ body {
   flex-direction: column;
   will-change: transform;
   z-index: 1;
+  position: relative;
 }
 
 .mirror-stage {
@@ -254,7 +273,9 @@ body {
 }
 
 .page[data-phase='waiting'],
-.page[data-phase='waiting'] * {
+.page[data-phase='waiting'] *,
+.page[data-phase='handover'],
+.page[data-phase='handover'] * {
   pointer-events: none;
 }
 
@@ -615,6 +636,23 @@ body {
   z-index: 2;
 }
 
+/* 主展厅文字（朝代/镜名/简介）：三幕交接第二幕（text-enter 挂载）并行淡入；
+   未入场前隐藏（序厅期间本就被序厅层覆盖） */
+.app-footer:not(.text-enter) {
+  visibility: hidden;
+}
+
+.app-footer.text-enter > * {
+  animation: hall-text-in 0.6s ease both;
+}
+
+@keyframes hall-text-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
 .ref-entry {
   pointer-events: auto;
 }
@@ -677,6 +715,22 @@ body {
 
 .dynasty-dots span.active {
   background: var(--accent);
+  opacity: 1;
+  transform: scale(1.4);
+}
+
+/* 序厅两项（磨镜页/仕女页）：空心小点、更低透明度，与展厅九镜区分 */
+.dynasty-dots span.opening-dot {
+  width: 4px;
+  height: 4px;
+  background: transparent;
+  border: 1px solid var(--ink-faint);
+  opacity: 0.7;
+}
+
+.dynasty-dots span.opening-dot.active {
+  background: transparent;
+  border-color: var(--accent);
   opacity: 1;
   transform: scale(1.4);
 }
