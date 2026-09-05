@@ -49,45 +49,49 @@
   justify-content: flex-start;
 }
 
-/* 标题区：屏幕上 1/3 居中（顶部安全区避让） */
+/* 标题区：竖排题跋带，整体锚在屏幕右上角（writing-mode: vertical-rl 后
+   块流向右→左，子元素按 DOM 顺序自然形成「主标题 → 副题 → 序言」的右→左行款）。
+   磨镜图右上为深色留白（匠人主体在中下、仕女残影在左侧），竖排文字落在此处不遮主体 */
 .title-page-head {
-  z-index: 1; /* 压在小屏时画的淡出上缘之上 */
-  margin-top: max(9dvh, calc(env(safe-area-inset-top) + 48px));
-  text-align: center;
+  position: absolute;
+  top: max(4.5dvh, calc(env(safe-area-inset-top) + 24px));
+  right: clamp(16px, 4.5vw, 36px);
+  z-index: 1; /* 压在顶部渐变纱与画之上 */
+  writing-mode: vertical-rl; /* 一个属性完成竖排：字自上而下，多列自动向左折 */
   pointer-events: none;
 }
 
-/* 主标题：四字拉开，字号全页最大；霞鹜文楷无粗字重，保持轻（400）不描边不发光 */
+/* 主标题：四字竖列，字号全页最大（竖排后较横排略增，增强碑帖题签的存在感）；
+   霞鹜文楷无粗字重，保持轻（400）不描边不发光；竖排下 letter-spacing 沿纵向拉开字距 */
 .title-page-main {
-  font-size: clamp(38px, 11vw, 62px);
-  line-height: 1.15;
+  font-size: clamp(44px, 12.5vw, 74px);
+  line-height: 1.15; /* 竖排下即列宽 */
   font-weight: 400;
-  letter-spacing: 0.38em;
-  margin-left: 0.38em; /* 抵消末字符字距，保持视觉居中 */
+  letter-spacing: 0.3em;
   color: var(--accent); /* 朱红主标题：与主展厅朝代名（.dynasty-name）同色一致 */
   white-space: nowrap;
 }
 
-/* 副标题：约主标题 1/3 字号，低透明度米灰 */
+/* 副标题：竖列，位于主标题列左侧（右→左行款的第二列），约主标题 1/3 字号，低透明度米灰 */
 .title-page-sub {
-  margin-top: clamp(8px, 1.8dvh, 16px);
-  font-size: clamp(13px, 3.6vw, 20px);
-  letter-spacing: 0.32em;
-  margin-left: 0.32em;
+  margin-right: clamp(10px, 2.6vw, 16px); /* 与主标题列的列距（副题右缘朝向主标题列） */
+  font-size: clamp(14px, 4vw, 23px);
+  line-height: 1.7;
+  letter-spacing: 0.26em;
   color: rgba(210, 202, 185, 0.62);
   white-space: nowrap;
 }
 
-/* 序言三行：标题与画之间，字号明显小于标题、行距舒展 */
+/* 序言三行：竖排下变三列小字题跋（右→左读），列首整体低于标题起笔（跋低正文的书册行款），
+   列距（竖排 line-height）与字距都舒展，透明度再降一档作三级层级 */
 .title-page-preface {
-  z-index: 1;
-  margin-top: clamp(20px, 4.5dvh, 44px);
-  text-align: center;
-  font-size: clamp(14px, 3.8vw, 17px);
-  line-height: 2.15;
-  letter-spacing: 0.14em;
-  color: rgba(210, 202, 185, 0.66);
-  pointer-events: none;
+  margin-top: clamp(48px, 10dvh, 120px);
+  margin-right: clamp(12px, 3.2vw, 20px);
+  font-size: clamp(13px, 3.5vw, 16px);
+  line-height: 2.4;
+  letter-spacing: 0.18em;
+  color: rgba(210, 202, 185, 0.6);
+  max-height: 56dvh; /* 列长兜底：过长时自动向左折列，不与下部画主体相碰 */
 }
 
 /* 画：真正全屏 cover 铺满（inset:0），按比例裁切、零边框——消除旧版「固定高度画框感」。
@@ -169,23 +173,21 @@
   );
 }
 
-/* 前言两行：浮于画上方（画上缘已遮罩淡出），不再重复「照见千年」 */
+/* 前言两行：竖排两列（右→左读），落点在画面右上方——仕女图上部是题字留白区，
+   两列短（各约 10 字），不触及下方人物与镜台（主体中下偏左）；画上缘已遮罩淡出 */
 .preface-copy {
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  top: max(10dvh, calc(env(safe-area-inset-top) + 60px));
+  top: max(7.5dvh, calc(env(safe-area-inset-top) + 56px));
+  right: clamp(20px, 5vw, 44px);
   z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  font-size: clamp(16px, 4.4vw, 21px);
-  line-height: 2.2;
-  letter-spacing: 0.16em;
-  color: rgba(235, 226, 205, 0.88);
+  writing-mode: vertical-rl; /* 两段 <p> 自然成两列：右列「镜中…」先读，左列「镜背…」后读 */
+  font-size: clamp(17px, 4.8vw, 23px); /* 核心文案：比第一页序言略大 */
+  line-height: 2.2; /* 竖排下即两列的列距 */
+  letter-spacing: 0.2em;
+  color: rgba(235, 226, 205, 0.88); /* 主句层级不变 */
   pointer-events: none;
   white-space: nowrap;
+  max-height: 52dvh; /* 列长兜底：极矮视口时向左折列而非下探画主体 */
 }
 
 /* ---- 小图注：很小、低调（两页共用） ---- */
@@ -294,8 +296,9 @@
   animation: opening-painting-breathe 2.1s ease-in-out both;
 }
 
-/* .preface-copy / .opening-caption 自带 translateX(-50%)，入场位移改由 margin 模拟会破坏居中，
-   故这两个用纯 opacity 版本 */
+/* .opening-caption 自带 translateX(-50%)，入场位移改由 margin 模拟会破坏居中，
+   故它用纯 opacity 版本；竖排文字块（title-page-head / preface-copy）无 transform 居中，
+   用带 10px 纵向位移的正常版本（竖排下同样自然） */
 @keyframes opening-copy-in-centered {
   from {
     opacity: 0;
@@ -306,9 +309,13 @@
 }
 
 .opening-page.is-current .title-page-head,
-.opening-page.is-current .title-page-preface,
 .opening-page.is-current .preface-copy {
-  animation: opening-copy-in-centered 0.9s ease 0.3s both;
+  animation: opening-copy-in 0.9s ease 0.3s both;
+}
+
+.opening-page.is-current .title-page-preface {
+  /* 题跋列随标题带一起浮现，但稍再晚半拍，强化「正文后跋」的行款节奏 */
+  animation: opening-copy-in 0.9s ease 0.45s both;
 }
 
 .opening-page.is-current .opening-caption {

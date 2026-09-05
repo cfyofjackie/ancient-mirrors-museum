@@ -10,26 +10,28 @@ interface OpeningPagesProps {
 }
 
 /**
- * 序厅两页的视觉——展览扉页化（原「一张居中小图 + 一行字」重排）：
- * 第 1 页《磨镜图》= 展览扉页：标题「照见千年 / 中国古代铜镜展」+ 序言三行 +
- *   画 cover 铺满下半部（渐变遮罩融入背景），页面全屏不透明深色底（主展厅商镜不透出）。
- * 第 2 页《对镜仕女图》= 展览前言：画大幅铺陈 + 前言两行 +「入展」入口指示。
+ * 序厅两页的视觉——展览扉页化 + 文字竖排（中国古代书册/画上题跋风格）：
+ * 第 1 页《磨镜图》= 展览扉页：主标题「照见千年」右上角竖排，副题与序言按
+ *   右→左竖列依次排布（一列题跋带，碑帖式行款），画 cover 铺满全屏，
+ *   页面全屏不透明深色底（主展厅商镜不透出）。
+ * 第 2 页《对镜仕女图》= 展览前言：画大幅铺陈 + 前言两列竖排（右上）+「入展」入口指示。
+ * 竖排只用 CSS writing-mode: vertical-rl（块流向右→左、字自上而下，标点自动取竖排形态）。
  * 纯 DOM（无 WebGL 也正常显示），挂在主序列 .page 位移容器内，
  * 手势全部由 usePageNavigation 的 window 级监听统一处理，本组件不持有任何监听/motion value。
  */
 export default function OpeningPages({ page, active }: OpeningPagesProps) {
   return (
     <div className={`opening-layer${active ? '' : ' is-hidden'}`} aria-hidden="true">
-      {/* 第 1 页：展览扉页（磨镜页） */}
+      {/* 第 1 页：展览扉页（磨镜页）。竖排行款（右→左）：主标题 → 副题 → 序言题跋 */}
       <section className={`opening-page opening-title-page${page === 1 ? ' is-current' : ''}`}>
         <div className="title-page-head">
           <h1 className="title-page-main">照见千年</h1>
           <p className="title-page-sub">中国古代铜镜展</p>
-        </div>
-        <div className="title-page-preface">
-          <p>一面铜镜，</p>
-          <p>在反复磨拭中，</p>
-          <p>渐渐有了照人的光。</p>
+          <div className="title-page-preface">
+            <p>一面铜镜，</p>
+            <p>在反复磨拭中，</p>
+            <p>渐渐有了照人的光。</p>
+          </div>
         </div>
         <div className="title-page-painting">
           <img className="opening-img-cover" src={mojingUrl} alt="" draggable={false} />
@@ -38,7 +40,7 @@ export default function OpeningPages({ page, active }: OpeningPagesProps) {
         <p className="opening-hint">向上滑动，开始观展</p>
       </section>
 
-      {/* 第 2 页：展览前言（仕女页） */}
+      {/* 第 2 页：展览前言（仕女页）。前言两列竖排：右列先读（镜中…），左列后读（镜背…） */}
       <section className={`opening-page opening-preface-page${page === 2 ? ' is-current' : ''}`}>
         <div className="painting-slot">
           <img className="opening-img" src={shinvUrl} alt="" draggable={false} />
