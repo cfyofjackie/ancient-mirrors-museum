@@ -97,12 +97,14 @@ export default function App() {
         data-page={index}
         aria-busy={phase === 'waiting'}
       >
-        {/* 主展厅顶部展签：朝代名（朱红）+ 镜名，两行一组居中。
+        {/* 主展厅顶部展签块：朝代名（朱红）+ 镜名 + 简介两行，一组居中。
+            文字随 mirror 数据渲染（与下方 MirrorStage 同一 mirror 对象），朝代切换自动跟随。
             pointer-events: none（触摸穿透到 window 级手势层）；仅主展厅显示，序厅有自己文字体系 */}
         {inHall && (
           <header className="hall-header">
             <div className="dynasty-name">{mirror.dynasty}</div>
             <div className="mirror-name">{mirror.name}</div>
+            <p className="mirror-desc">{mirror.shortDescription}</p>
           </header>
         )}
 
@@ -114,9 +116,8 @@ export default function App() {
           onReady={onReady}
         />
 
+        {/* 底部只留史实资料按钮 + 滑动提示（圆点指示器在 .page 之外固定于右缘） */}
         <footer className={`app-footer${inHall ? ' text-enter' : ''}`}>
-          <p className="mirror-desc">{mirror.shortDescription}</p>
-
           {mirror.reference && (
             <button type="button" className="ref-entry" onClick={() => setSheet({ type: 'reference' })}>
               史实资料

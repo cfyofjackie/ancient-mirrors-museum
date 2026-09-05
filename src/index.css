@@ -177,9 +177,10 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* 镜子在空带内居中略偏下：margin-top 使 flex 居中点下移一半 margin，
-     上方给顶部展签留呼吸；不改变空带高度，cqh 尺寸基准与镜子大小不变 */
-  margin-top: 10cqh;
+  /* 镜子在空带内居中略偏下：margin-top 使 flex 居中点下移一半 margin。
+     顶部展签块（朝代+镜名+简介）与底部按钮行把空带上下夹住后，空带本身已接近
+     视觉均衡，仅留微量下偏；不改变空带高度，cqh 尺寸基准与镜子大小不变 */
+  margin-top: 3cqh;
 }
 
 /* 3D 翻面（SLC 第三节 2）：perspective 提供纵深，preserve-3d 让两面共享翻转 */
@@ -652,7 +653,7 @@ body {
   align-items: center;
 }
 
-/* 主展厅顶部展签：朝代名（朱红）在上、镜名（米白、拉开字距）在下，两行一组居中。
+/* 主展厅顶部展签块：朝代名（朱红）→ 镜名（米白、拉开字距）→ 简介两行，一组居中。
    触摸穿透（window 级手势监听不受影响，但独立 DOM 层也不拦截）；随 .page 整体位移。
    层级：与底部文字同层（z2），顶部保护渐变之下可读性已由渐变保证 */
 .hall-header {
@@ -671,6 +672,11 @@ body {
 
 .hall-header > * {
   animation: hall-text-in 0.6s ease both;
+}
+
+/* 简介两行并入展签块：与镜名拉开一档（其余字号/行距/颜色沿用 .mirror-desc 全局样式） */
+.hall-header .mirror-desc {
+  margin-top: 4px;
 }
 
 .dynasty-name {
