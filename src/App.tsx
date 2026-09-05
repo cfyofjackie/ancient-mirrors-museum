@@ -88,7 +88,7 @@ export default function App() {
 
       {/* 整页内容容器：镜子与介绍文字共享同一位移，滑动时作为整体联动。
           序厅两页也在本容器内（OpeningPages 绝对定位层），与铜镜同一位移值。
-          顶部标题已移入序厅扉页（展览扉页化），主展厅不再渲染 header */}
+          主展厅顶部有 hall-header 展签（朝代名+镜名），随页面整体位移 */}
       <motion.div
         className="page"
         style={{ y, opacity }}
@@ -97,6 +97,15 @@ export default function App() {
         data-page={index}
         aria-busy={phase === 'waiting'}
       >
+        {/* 主展厅顶部展签：朝代名（朱红）+ 镜名，两行一组居中。
+            pointer-events: none（触摸穿透到 window 级手势层）；仅主展厅显示，序厅有自己文字体系 */}
+        {inHall && (
+          <header className="hall-header">
+            <div className="dynasty-name">{mirror.dynasty}</div>
+            <div className="mirror-name">{mirror.name}</div>
+          </header>
+        )}
+
         <MirrorStage
           mirror={mirror}
           flipped={flipped}
@@ -106,9 +115,6 @@ export default function App() {
         />
 
         <footer className={`app-footer${inHall ? ' text-enter' : ''}`}>
-          <div className="dynasty-name">{mirror.dynasty}</div>
-          <div className="mirror-name">{mirror.name}</div>
-          <div className="divider" />
           <p className="mirror-desc">{mirror.shortDescription}</p>
 
           {mirror.reference && (

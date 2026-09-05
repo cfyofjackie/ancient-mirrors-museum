@@ -177,6 +177,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* 镜子在空带内居中略偏下：margin-top 使 flex 居中点下移一半 margin，
+     上方给顶部展签留呼吸；不改变空带高度，cqh 尺寸基准与镜子大小不变 */
+  margin-top: 10cqh;
 }
 
 /* 3D 翻面（SLC 第三节 2）：perspective 提供纵深，preserve-3d 让两面共享翻转 */
@@ -294,24 +297,47 @@ body {
   }
 }
 
-/* ---- 史实资料入口 ---- */
+/* ---- 史实资料入口（描边胶囊按钮：红边框 + 淡红底 + CSS 绘制"册"形小图标） ---- */
 
 .ref-entry {
-  border: none;
-  background: transparent;
-  color: var(--accent); /* 朱红入口字样：与朝代名红色一致 */
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(181, 67, 47, 0.65); /* --accent 低透明度 */
+  border-radius: 999px;
+  background: rgba(181, 67, 47, 0.08); /* 极淡红底 */
+  color: var(--accent);
   font-family: var(--font-serif);
   font-size: 13px;
   letter-spacing: 0.2em;
-  padding: 6px 14px;
-  border-bottom: 1px solid rgba(181, 67, 47, 0.45); /* --accent 低透明度 */
+  /* 右侧多留 4px 抵消末字 letter-spacing 拖尾 */
+  padding: 8px 16px 8px 20px;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  transition: background-color 0.2s, border-color 0.2s;
 }
 
-.ref-entry:hover {
-  color: #c14a35; /* 提亮一档红 */
-  border-color: rgba(193, 74, 53, 0.7);
+/* CSS 绘制小图标：方框轮廓内两道竖线，示意"册"（字体子集有限，不用生僻字符） */
+.ref-entry::before {
+  content: '';
+  flex: none;
+  width: 9px;
+  height: 11px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0 2px,
+    currentColor 2px 3px,
+    transparent 3px 4px,
+    currentColor 4px 5px,
+    transparent 5px
+  );
+}
+
+.ref-entry:hover,
+.ref-entry:active {
+  background: rgba(181, 67, 47, 0.15); /* 加深一档 */
+  border-color: rgba(193, 74, 53, 0.85);
 }
 
 /* ---- 底部信息卡（热点说明 / 史实资料共用） ---- */
@@ -626,6 +652,27 @@ body {
   align-items: center;
 }
 
+/* 主展厅顶部展签：朝代名（朱红）在上、镜名（米白、拉开字距）在下，两行一组居中。
+   触摸穿透（window 级手势监听不受影响，但独立 DOM 层也不拦截）；随 .page 整体位移。
+   层级：与底部文字同层（z2），顶部保护渐变之下可读性已由渐变保证 */
+.hall-header {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  pointer-events: none;
+  position: relative;
+  z-index: 2;
+  /* 顶部安全区：.app 已含 max(20px, env(safe-area-inset-top))，此处仅加少量呼吸 */
+  margin-top: max(2px, env(safe-area-inset-top));
+}
+
+.hall-header > * {
+  animation: hall-text-in 0.6s ease both;
+}
+
 .dynasty-name {
   font-size: clamp(34px, 9vw, 48px);
   line-height: 1;
@@ -637,12 +684,6 @@ body {
   margin-top: 8px;
   font-size: clamp(16px, 4.2vw, 20px);
   letter-spacing: 0.18em;
-}
-
-.divider {
-  width: 40px;
-  height: 1px;
-  background: var(--ink-faint);
 }
 
 .mirror-desc {
