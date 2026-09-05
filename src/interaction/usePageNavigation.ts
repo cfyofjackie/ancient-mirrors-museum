@@ -51,6 +51,12 @@ export default function usePageNavigation(options: Options) {
       animate(opacity, toOpacity, transition),
       animate(y, toY, { ...transition, onComplete: () => { if (gen === generation.current) done() } }),
     ]
+    // 兜底：完成回调可能因代数失效（动画期间新的 pointerdown）被吞掉，
+    // 相位一旦卡死整页无法再翻页。duration + 100ms 后强制推进（幂等：done 内部各步骤天然只执行一次的前提是
+    // 若动画回调先完成则 gen 已推进、本兜底不生效；若回调被吞，则由此推进）。
+    window.setTimeout(() => {
+      if (gen === generation.current) done()
+    }, duration + 100)
   }, [opacity, y, reduced, stop])
   const settle = useCallback(() => {
     changePhase('entering')

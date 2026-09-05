@@ -48,7 +48,13 @@ export default function App() {
   // 其余镜间切换必须等新素材实际绘制后的 onReady（经 ready 回调）解除 waiting。
   useEffect(() => {
     if (phase !== 'waiting') return
-    if (!inHall || readyMirror.current === mirrorIndex) ready(index)
+    if (!inHall || readyMirror.current === mirrorIndex) {
+      ready(index)
+      return
+    }
+    // 兜底：onReady 因纹理超时等原因未到达时，800ms 后强制放行，避免页面卡死在 waiting
+    const bailout = setTimeout(() => ready(index), 800)
+    return () => clearTimeout(bailout)
   }, [phase, index, inHall, mirrorIndex, ready])
 
   useEffect(() => {
