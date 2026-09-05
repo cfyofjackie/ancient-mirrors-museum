@@ -299,19 +299,19 @@ body {
 .ref-entry {
   border: none;
   background: transparent;
-  color: var(--ink-dim);
+  color: var(--accent); /* 朱红入口字样：与朝代名红色一致 */
   font-family: var(--font-serif);
   font-size: 13px;
   letter-spacing: 0.2em;
   padding: 6px 14px;
-  border-bottom: 1px solid var(--ink-faint);
+  border-bottom: 1px solid rgba(181, 67, 47, 0.45); /* --accent 低透明度 */
   cursor: pointer;
   transition: color 0.2s, border-color 0.2s;
 }
 
 .ref-entry:hover {
-  color: var(--ink);
-  border-color: var(--ink-dim);
+  color: #c14a35; /* 提亮一档红 */
+  border-color: rgba(193, 74, 53, 0.7);
 }
 
 /* ---- 底部信息卡（热点说明 / 史实资料共用） ---- */

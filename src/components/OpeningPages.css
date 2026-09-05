@@ -8,7 +8,13 @@
 
 .opening-layer {
   position: absolute;
-  inset: 0;
+  /* 抵消 .app 的内边距（上 max(20px, safe-top) / 左右 24px / 下 max(20px, safe-bottom)），
+     序厅两页真正铺到屏幕物理边缘——画 cover 全屏后零边框（用户手机暗边框问题的根因之一）。
+     仅序厅层外扩，主展厅内容布局不受影响 */
+  top: calc(-1 * max(20px, env(safe-area-inset-top)));
+  right: -24px;
+  bottom: calc(-1 * max(20px, env(safe-area-inset-bottom)));
+  left: -24px;
   z-index: 4;
   /* 拦截指针：序厅期间不与下方铜镜/热点交互（window 级翻页监听不受影响） */
   user-select: none;
@@ -58,7 +64,7 @@
   font-weight: 400;
   letter-spacing: 0.38em;
   margin-left: 0.38em; /* 抵消末字符字距，保持视觉居中 */
-  color: rgba(235, 226, 205, 0.92);
+  color: var(--accent); /* 朱红主标题：与主展厅朝代名（.dynasty-name）同色一致 */
   white-space: nowrap;
 }
 
@@ -84,14 +90,13 @@
   pointer-events: none;
 }
 
-/* 画：cover 铺满下半部，径向渐变遮罩使上缘与两角浮现融入深色底，无矩形边界 */
+/* 画：真正全屏 cover 铺满（inset:0），按比例裁切、零边框——消除旧版「固定高度画框感」。
+   overflow:hidden 兜住进场呼吸 scale(1.03) 的溢出（body 本身 overflow:hidden，无滚动副作用） */
 .title-page-painting {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 52dvh;
+  inset: 0;
   z-index: 0;
+  overflow: hidden;
   pointer-events: none;
 }
 
@@ -100,20 +105,39 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 38%;
+  object-position: center 40%; /* 主体（匠人与镜台）在中下部，上下按屏比裁切安全 */
   user-select: none;
   -webkit-user-select: none;
-  mask-image: radial-gradient(130% 105% at 50% 76%, #000 46%, rgba(0, 0, 0, 0.55) 72%, transparent 94%);
-  -webkit-mask-image: radial-gradient(130% 105% at 50% 76%, #000 46%, rgba(0, 0, 0, 0.55) 72%, transparent 94%);
+  /* 径向渐变遮罩：上缘与四角渐隐融入页面深色底（底色本身全屏不透明，无矩形边界） */
+  mask-image: radial-gradient(135% 108% at 50% 76%, #000 44%, rgba(0, 0, 0, 0.6) 70%, transparent 93%);
+  -webkit-mask-image: radial-gradient(135% 108% at 50% 76%, #000 44%, rgba(0, 0, 0, 0.6) 70%, transparent 93%);
+}
+
+/* 文字区轻背景保护：全屏 cover 后标题/序言浮于画上（横屏宽幅纵向裁切多时尤甚），
+   顶部叠加一层页面同色渐变纱（无边框，向下渐隐），保证文字可读 */
+.opening-title-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(38, 44, 51, 0.9) 0%,
+    rgba(38, 44, 51, 0.55) 22%,
+    rgba(38, 44, 51, 0) 46%
+  );
 }
 
 /* ---- 第 2 页：展览前言（仕女页） ---- */
 
-/* 画框槽位：宽高比锁定 941/1672，img 填满槽位。宽度较旧版放大，画大幅铺陈 */
+/* 画槽：全屏 cover 铺满（取代旧版 941/1672 锁比槽位——那会露出四周底色形成边框感），
+   img 按比例裁切铺满整页；overflow:hidden 兜住呼吸动画溢出 */
 .painting-slot {
-  position: relative;
-  width: min(94vw, 55dvh);
-  aspect-ratio: 941 / 1672;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
 }
 
 .opening-img {
@@ -121,11 +145,28 @@
   inset: 0;
   width: 100%;
   height: 100%;
+  object-fit: cover;
+  object-position: center; /* 仕女与镜台主体居中，左右/上下裁切安全 */
   user-select: none;
   -webkit-user-select: none;
   /* 渐变遮罩消除矩形边界（素材本身已做深色融合，此处把四边与四角彻底融进展墙底色） */
-  mask-image: radial-gradient(75% 78% at 50% 52%, #000 42%, rgba(0, 0, 0, 0.5) 68%, transparent 92%);
-  -webkit-mask-image: radial-gradient(75% 78% at 50% 52%, #000 42%, rgba(0, 0, 0, 0.5) 68%, transparent 92%);
+  mask-image: radial-gradient(105% 92% at 50% 55%, #000 45%, rgba(0, 0, 0, 0.55) 70%, transparent 94%);
+  -webkit-mask-image: radial-gradient(105% 92% at 50% 55%, #000 45%, rgba(0, 0, 0, 0.55) 70%, transparent 94%);
+}
+
+/* 前言两行的轻背景保护（与第 1 页同思路：页面同色渐变纱，无边框） */
+.opening-preface-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(38, 44, 51, 0.9) 0%,
+    rgba(38, 44, 51, 0.55) 22%,
+    rgba(38, 44, 51, 0) 46%
+  );
 }
 
 /* 前言两行：浮于画上方（画上缘已遮罩淡出），不再重复「照见千年」 */
