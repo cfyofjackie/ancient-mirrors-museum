@@ -298,23 +298,34 @@ body {
   }
 }
 
-/* ---- 史实资料入口（描边胶囊按钮：红边框 + 淡红底 + CSS 绘制"册"形小图标） ---- */
+/* ---- 史实资料入口（朱红实底胶囊 + 米白字 + 涟漪脉冲呼吸 + CSS 绘制"册"形小图标） ---- */
 
 .ref-entry {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid rgba(181, 67, 47, 0.65); /* --accent 低透明度 */
+  border: 1px solid var(--accent); /* 同色边，抗锯齿 */
   border-radius: 999px;
-  background: rgba(181, 67, 47, 0.08); /* 极淡红底 */
-  color: var(--accent);
+  background: var(--accent); /* 朱红实底 */
+  color: #f0e8d8; /* 米白（接近 --ink） */
   font-family: var(--font-serif);
   font-size: 13px;
   letter-spacing: 0.2em;
   /* 右侧多留 4px 抵消末字 letter-spacing 拖尾 */
   padding: 8px 16px 8px 20px;
   cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
+  transition: background-color 0.2s;
+  /* 涟漪脉冲呼吸：雷达式外扩光环，暗示可点击 */
+  animation: ref-entry-pulse 2.5s ease-out infinite;
+}
+
+@keyframes ref-entry-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(181, 67, 47, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgba(181, 67, 47, 0);
+  }
 }
 
 /* CSS 绘制小图标：方框轮廓内两道竖线，示意"册"（字体子集有限，不用生僻字符） */
@@ -337,8 +348,32 @@ body {
 
 .ref-entry:hover,
 .ref-entry:active {
-  background: rgba(181, 67, 47, 0.15); /* 加深一档 */
-  border-color: rgba(193, 74, 53, 0.85);
+  background: #c14a35; /* 提亮一档 */
+  animation-play-state: paused; /* 悬停/按下时停住涟漪，观感更稳 */
+}
+
+.ref-entry:active {
+  transform: scale(0.96);
+}
+
+/* 主展厅底部 .app-footer.text-enter > * 的入场动画（优先级更高）会整体覆盖 animation，
+   这里并列重申两个动画：入场（opacity/transform）与涟漪脉冲（box-shadow）属性不重叠，可共存 */
+.app-footer.text-enter .ref-entry {
+  animation: hall-text-in 0.6s ease both, ref-entry-pulse 2.5s ease-out infinite;
+}
+
+.app-footer.text-enter .ref-entry:hover,
+.app-footer.text-enter .ref-entry:active {
+  /* 双动画列表按序对应：入场继续播完，仅暂停涟漪脉冲 */
+  animation-play-state: running, paused;
+}
+
+/* 减少动态偏好：去掉呼吸光环，实底按钮本身已足够醒目（置于共存规则之后以胜出同优先级） */
+@media (prefers-reduced-motion: reduce) {
+  .ref-entry,
+  .app-footer.text-enter .ref-entry {
+    animation: none;
+  }
 }
 
 /* ---- 底部信息卡（热点说明 / 史实资料共用） ---- */
