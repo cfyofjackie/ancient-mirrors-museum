@@ -9,7 +9,7 @@ import type { AnimationPlaybackControls, MotionValue } from 'framer-motion'
  *   画中镜裁切图（shinv-mirror.webp 桥接层，绝对定位在 .page 内、随页面位移）单独放大，
  *   目标为主铜镜落位（实测 .mirror-3d-wrap / .mirror-face rect）。
  * 第二幕·叠化交接（~500ms）：内容切换到商镜页，画中镜与 3D 商镜同位交叉淡化；
- *   顶部标题与主展厅文字（朝代/镜名/简介）并行淡入。
+ *   主展厅文字（朝代/镜名/简介）并行淡入（顶部标题已移入序厅扉页，无 header 淡入）。
  * 第三幕·落定（~300ms）：铜镜轻微缩放落定（CSS mirror-settle，跨越二三幕、第三幕末到位），交互解锁。
  *
  * 可中断：交接中途 pointerdown → 立即完成（interrupt），直接落在主展厅（不打架原则）。
@@ -48,7 +48,7 @@ type Callbacks = {
   getStage: () => Element | null
   /** 商镜纹理是否已就绪（3D 绘制完成或平面图加载完成） */
   isMirrorReady: () => boolean
-  /** 第二幕：内容切换到商镜 + 标题/文字并行淡入（须幂等，中断时也会调用） */
+  /** 第二幕：内容切换到商镜 + 主展厅文字并行淡入（须幂等，中断时也会调用） */
   onEnterHall: () => void
   /** 第三幕末：解锁交互（须幂等） */
   onUnlock: () => void

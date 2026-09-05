@@ -1,7 +1,10 @@
 /* 序厅两页（OpeningPages）——已并入主翻页序列（取代一次性遮罩 OpeningOverlay）：
    磨镜页/仕女页作为序列前两项挂在主页面 .page 位移容器内（position:absolute 铺满），
    跟手/回弹/翻页过渡与铜镜页共用 usePageNavigation 一套机制，本文件不含任何手势逻辑。
-   仅 opacity / transform / mask（合成层友好）；z 层级：主展厅内容之上、画中镜桥接层（z6）之下。 */
+   仅 opacity / transform / mask（合成层友好）；z 层级：主展厅内容之上、画中镜桥接层（z6）之下。
+   展览扉页化：两页均为全屏不透明深色底（主展厅按商镜渲染藏在下层，不能透出），
+   画与文字浮于底色之上；进场微编排（画呼吸 + 文字延后浮现）在 .is-current 挂载时触发一次，
+   离开再回来随 display/类切换自动重播。 */
 
 .opening-layer {
   position: absolute;
@@ -18,22 +21,99 @@
   pointer-events: none;
 }
 
+/* 全屏不透明深色底：商镜透出修复的主体——序厅两页期间下方 3D canvas 完全被盖住 */
 .opening-page {
   position: absolute;
   inset: 0;
   display: none;
   align-items: center;
   justify-content: center;
+  background: linear-gradient(180deg, #262c33 0%, #20262c 46%, #191e24 100%);
 }
 
 .opening-page.is-current {
   display: flex;
 }
 
-/* 画框槽位：宽高比锁定 941/1672，宽度受视口宽/高双重约束（含 dvh，避免移动端地址栏跳动） */
+/* ---- 第 1 页：展览扉页（磨镜页） ---- */
+
+.opening-title-page {
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* 标题区：屏幕上 1/3 居中（顶部安全区避让） */
+.title-page-head {
+  z-index: 1; /* 压在小屏时画的淡出上缘之上 */
+  margin-top: max(9dvh, calc(env(safe-area-inset-top) + 48px));
+  text-align: center;
+  pointer-events: none;
+}
+
+/* 主标题：四字拉开，字号全页最大；霞鹜文楷无粗字重，保持轻（400）不描边不发光 */
+.title-page-main {
+  font-size: clamp(38px, 11vw, 62px);
+  line-height: 1.15;
+  font-weight: 400;
+  letter-spacing: 0.38em;
+  margin-left: 0.38em; /* 抵消末字符字距，保持视觉居中 */
+  color: rgba(235, 226, 205, 0.92);
+  white-space: nowrap;
+}
+
+/* 副标题：约主标题 1/3 字号，低透明度米灰 */
+.title-page-sub {
+  margin-top: clamp(8px, 1.8dvh, 16px);
+  font-size: clamp(13px, 3.6vw, 20px);
+  letter-spacing: 0.32em;
+  margin-left: 0.32em;
+  color: rgba(210, 202, 185, 0.62);
+  white-space: nowrap;
+}
+
+/* 序言三行：标题与画之间，字号明显小于标题、行距舒展 */
+.title-page-preface {
+  z-index: 1;
+  margin-top: clamp(20px, 4.5dvh, 44px);
+  text-align: center;
+  font-size: clamp(14px, 3.8vw, 17px);
+  line-height: 2.15;
+  letter-spacing: 0.14em;
+  color: rgba(210, 202, 185, 0.66);
+  pointer-events: none;
+}
+
+/* 画：cover 铺满下半部，径向渐变遮罩使上缘与两角浮现融入深色底，无矩形边界 */
+.title-page-painting {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 52dvh;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.opening-img-cover {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 38%;
+  user-select: none;
+  -webkit-user-select: none;
+  mask-image: radial-gradient(130% 105% at 50% 76%, #000 46%, rgba(0, 0, 0, 0.55) 72%, transparent 94%);
+  -webkit-mask-image: radial-gradient(130% 105% at 50% 76%, #000 46%, rgba(0, 0, 0, 0.55) 72%, transparent 94%);
+}
+
+/* ---- 第 2 页：展览前言（仕女页） ---- */
+
+/* 画框槽位：宽高比锁定 941/1672，img 填满槽位——画中镜裁切比例（BRIDGE_CROP）依赖该映射，
+   改动尺寸/裁切方式前须回归三幕交接落位。宽度较旧版放大，画大幅铺陈 */
 .painting-slot {
   position: relative;
-  width: min(86vw, 50dvh);
+  width: min(94vw, 55dvh);
   aspect-ratio: 941 / 1672;
 }
 
@@ -49,48 +129,49 @@
   -webkit-mask-image: radial-gradient(75% 78% at 50% 52%, #000 42%, rgba(0, 0, 0, 0.5) 68%, transparent 92%);
 }
 
-/* ---- 文案层：真实 HTML 文本，居中，块宽不超屏宽 50% ---- */
-
-.opening-copy {
+/* 前言两行：浮于画上方（画上缘已遮罩淡出），不再重复「照见千年」 */
+.preface-copy {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  top: max(24dvh, calc(env(safe-area-inset-top) + 72px));
-  max-width: 50vw;
+  top: max(10dvh, calc(env(safe-area-inset-top) + 60px));
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(14px, 3dvh, 26px);
   text-align: center;
+  font-size: clamp(16px, 4.4vw, 21px);
+  line-height: 2.2;
+  letter-spacing: 0.16em;
+  color: rgba(235, 226, 205, 0.88);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ---- 小图注：很小、低调（两页共用） ---- */
+
+.opening-caption {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(max(calc(env(safe-area-inset-bottom) + 30px), 5dvh) + 32px);
+  z-index: 2;
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  color: rgba(210, 202, 185, 0.4);
+  white-space: nowrap;
   pointer-events: none;
 }
 
-.opening-line1 {
-  font-size: clamp(30px, 8vw, 44px);
-  letter-spacing: 0.26em;
-  margin-left: 0.26em; /* 抵消末字符字距，保持视觉居中 */
-  font-weight: 400;
-  color: rgba(235, 226, 205, 0.9);
-  white-space: nowrap;
-}
-
-/* 第 2 页「可以正衣冠」：字号约为第一行 60%、透明度更低，维持两行层级关系 */
-.opening-line2 {
-  font-size: clamp(18px, 4.8vw, 26px);
-  letter-spacing: 0.2em;
-  margin-left: 0.2em;
-  font-weight: 400;
-  color: rgba(210, 202, 185, 0.62);
-  white-space: nowrap;
-}
-
-/* ---- 底部轻提示：低调呼吸 ---- */
+/* ---- 第 1 页底部轻提示：低调呼吸 ---- */
 
 .opening-hint {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
   bottom: max(calc(env(safe-area-inset-bottom) + 30px), 5dvh);
+  z-index: 2;
   margin: 0;
   font-size: 13px;
   letter-spacing: 0.18em;
@@ -110,18 +191,122 @@
   }
 }
 
+/* ---- 第 2 页最下方入口指示「入展 ⌄」：很轻的呼吸；实际手势仍是上滑（与翻页一致） ---- */
+
+.opening-entry {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: max(calc(env(safe-area-inset-bottom) + 22px), 4dvh);
+  z-index: 2;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em; /* 抵消末字符字距，保持视觉居中 */
+  color: rgba(210, 202, 185, 0.55);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: hint-breathe 3s ease-in-out 1s infinite;
+}
+
+/* 下箭头：CSS 画（字体子集不含 ⌄ 字形，避免缺字回退） */
+.entry-chevron {
+  width: 8px;
+  height: 8px;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  transform: rotate(45deg);
+  margin-top: -3px;
+}
+
+/* ---- 进场微编排：进入该页触发一次（.is-current 挂载/重挂即重播），
+       画呼吸式 scale（1.0 → 1.03 → 1.0），文字比画晚 ~0.3s 浮现 ---- */
+
+@keyframes opening-painting-breathe {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes opening-copy-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.opening-page.is-current .opening-img-cover,
+.opening-page.is-current .opening-img {
+  animation: opening-painting-breathe 2.1s ease-in-out both;
+}
+
+/* .preface-copy / .opening-caption 自带 translateX(-50%)，入场位移改由 margin 模拟会破坏居中，
+   故这两个用纯 opacity 版本 */
+@keyframes opening-copy-in-centered {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.opening-page.is-current .title-page-head,
+.opening-page.is-current .title-page-preface,
+.opening-page.is-current .preface-copy {
+  animation: opening-copy-in-centered 0.9s ease 0.3s both;
+}
+
+.opening-page.is-current .opening-caption {
+  animation: opening-copy-in-centered 0.9s ease 0.5s both;
+}
+
+.opening-page.is-current .opening-hint {
+  /* 入场浮现 + 常驻呼吸叠加：后声明的 hint-breathe 在其起始后接管透明度 */
+  animation:
+    opening-copy-in-centered 0.9s ease 0.5s both,
+    hint-breathe 2.8s ease-in-out 1.6s infinite;
+}
+
+.opening-page.is-current .opening-entry {
+  animation:
+    opening-copy-in-centered 0.9s ease 0.5s both,
+    hint-breathe 3s ease-in-out 1.8s infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .opening-hint {
+  .opening-hint,
+  .opening-entry,
+  .opening-page.is-current .opening-img-cover,
+  .opening-page.is-current .opening-img,
+  .opening-page.is-current .title-page-head,
+  .opening-page.is-current .title-page-preface,
+  .opening-page.is-current .preface-copy,
+  .opening-page.is-current .opening-caption,
+  .opening-page.is-current .opening-hint,
+  .opening-page.is-current .opening-entry {
     animation: none;
   }
 }
 
-/* ---- 三幕交接·第一幕「让位」：仕女页内容淡出，画中镜桥接层单独留在画面放大
-       （时长对齐 useHandover HANDOVER.yieldFade = 450ms） ---- */
+/* ---- 三幕交接·第一幕「让位」：整页内容连同不透明底一起淡出，画中镜桥接层单独留在画面放大
+       （时长对齐 useHandover HANDOVER.yieldFade = 450ms；底色与展墙色调一致，叠化无跳变） ---- */
 
-.opening-layer.is-yielding .opening-img,
-.opening-layer.is-yielding .opening-copy,
-.opening-layer.is-yielding .opening-hint {
+.opening-layer.is-yielding .opening-page.is-current {
   opacity: 0;
   transition: opacity 0.45s ease;
 }

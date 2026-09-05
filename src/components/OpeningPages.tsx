@@ -15,10 +15,13 @@ interface OpeningPagesProps {
 }
 
 /**
- * 序厅两页的视觉（原 OpeningOverlay 两页视觉平移入主翻页序列）：
- * 第 1 页《磨镜图》+「以铜为镜」，第 2 页《对镜仕女图》+「可以正衣冠」。
+ * 序厅两页的视觉——展览扉页化（原「一张居中小图 + 一行字」重排）：
+ * 第 1 页《磨镜图》= 展览扉页：标题「照见千年 / 中国古代铜镜展」+ 序言三行 +
+ *   画 cover 铺满下半部（渐变遮罩融入背景），页面全屏不透明深色底（主展厅商镜不透出）。
+ * 第 2 页《对镜仕女图》= 展览前言：画大幅铺陈 + 前言两行 +「入展」入口指示。
  * 纯 DOM（无 WebGL 也正常显示），挂在主序列 .page 位移容器内，
  * 手势全部由 usePageNavigation 的 window 级监听统一处理，本组件不持有任何监听/motion value。
+ * 第 2 页画框槽位仍保持 941/1672 锁比、img 填满槽位（画中镜裁切比例 BRIDGE_CROP 依赖该映射）。
  */
 export default function OpeningPages({ page, active, yielding, slotRef }: OpeningPagesProps) {
   return (
@@ -26,26 +29,38 @@ export default function OpeningPages({ page, active, yielding, slotRef }: Openin
       className={`opening-layer${active ? '' : ' is-hidden'}${yielding ? ' is-yielding' : ''}`}
       aria-hidden="true"
     >
-      {/* 第 1 页：磨镜页 */}
-      <section className={`opening-page${page === 1 ? ' is-current' : ''}`}>
-        <div className="painting-slot">
-          <img className="opening-img" src={mojingUrl} alt="" draggable={false} />
+      {/* 第 1 页：展览扉页（磨镜页） */}
+      <section className={`opening-page opening-title-page${page === 1 ? ' is-current' : ''}`}>
+        <div className="title-page-head">
+          <h1 className="title-page-main">照见千年</h1>
+          <p className="title-page-sub">中国古代铜镜展</p>
         </div>
-        <div className="opening-copy">
-          <p className="opening-line1">以铜为镜</p>
+        <div className="title-page-preface">
+          <p>一面铜镜，</p>
+          <p>在反复磨拭中，</p>
+          <p>渐渐有了照人的光。</p>
         </div>
+        <div className="title-page-painting">
+          <img className="opening-img-cover" src={mojingUrl} alt="" draggable={false} />
+        </div>
+        <p className="opening-caption">磨镜图</p>
         <p className="opening-hint">向上滑动，开始观展</p>
       </section>
 
-      {/* 第 2 页：对镜页（painting-slot 供交接时刻测量画中镜裁切位置） */}
-      <section className={`opening-page${page === 2 ? ' is-current' : ''}`}>
+      {/* 第 2 页：展览前言（仕女页；painting-slot 供交接时刻测量画中镜裁切位置） */}
+      <section className={`opening-page opening-preface-page${page === 2 ? ' is-current' : ''}`}>
         <div className="painting-slot" ref={slotRef}>
           <img className="opening-img" src={shinvUrl} alt="" draggable={false} />
         </div>
-        <div className="opening-copy">
-          <p className="opening-line2">可以正衣冠</p>
+        <div className="preface-copy">
+          <p>镜中，是一时的衣冠；</p>
+          <p>镜背，是千年的纹样。</p>
         </div>
-        <p className="opening-hint">向上滑动，进入展厅</p>
+        <p className="opening-caption">对镜仕女图</p>
+        <p className="opening-entry">
+          入展
+          <span className="entry-chevron" />
+        </p>
       </section>
     </div>
   )

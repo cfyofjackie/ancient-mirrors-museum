@@ -123,43 +123,7 @@ body {
   z-index: 2;
 }
 
-.app-header {
-  text-align: center;
-  position: relative;
-  z-index: 2;
-  pointer-events: none;
-}
-
-/* 序厅两页期间隐藏标题（序厅有自己的文字）；进入商镜页后按 header-enter 淡入 */
-.app-header.header-hidden {
-  opacity: 0;
-}
-
-/* 主标题入场淡入（三幕交接第二幕起由 App 挂载） */
-.app-header.header-enter {
-  animation: header-enter 0.55s ease both;
-}
-
-@keyframes header-enter {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-}
-
-.app-title {
-  font-size: clamp(26px, 6vw, 34px);
-  letter-spacing: 0.35em;
-  margin-left: 0.35em; /* 抵消末字符字距，保持视觉居中 */
-  font-weight: 700;
-}
-
-.app-subtitle {
-  margin-top: 6px;
-  font-size: clamp(12px, 3vw, 14px);
-  color: var(--ink-dim);
-  letter-spacing: 0.12em;
-}
+/* 顶部标题区已移除（展览扉页化：标题移入序厅扉页），主展厅为 header-less 空带 */
 
 /* 整页内容容器：镜子画布区 + 底部介绍文字，作为整体随滑动联动。
    will-change 提升为独立合成层——拖拽/切换的 transform 更新走纯 GPU 合成，不触发内容重绘；
@@ -229,9 +193,9 @@ body {
 
 .mirror-face {
   display: block;
-  /* 铜镜占舞台约 70%（补偿舞台内边距后观感对齐 SLC 62%），不超出舞台高度 */
-  width: min(70vw, 58vh, 560px);
-  width: min(70cqw, 70cqh, 560px);
+  /* 铜镜占舞台约 76%（header 删除后空带更高，镜子相应上移放大），不超出舞台高度 */
+  width: min(76vw, 64vh, 560px);
+  width: min(76cqw, 76cqh, 560px);
   max-height: 100%;
   object-fit: contain;
   backface-visibility: hidden;
@@ -248,8 +212,8 @@ body {
 /* 3D 铜镜容器：热点层与画布同框叠放 */
 .mirror-3d-wrap {
   position: relative;
-  /* 70cqw 补偿舞台内边距（观感对齐 62vw）；70cqh 保证不侵上下文字 */
-  width: min(70cqw, 70cqh, 560px);
+  /* 76cqw/cqh（header 删除后空带变高，镜子放大居中于空带，以不侵入底部文字为准） */
+  width: min(76cqw, 76cqh, 560px);
   max-height: 100%;
   aspect-ratio: 1;
 }

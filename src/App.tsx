@@ -18,9 +18,8 @@ export default function App() {
   const [flipped, setFlipped] = useState(false)
   const [showHotspots, setShowHotspots] = useState(false)
   const [waiting, setWaiting] = useState(false)
-  // 顶部标题：序厅两页期间隐藏（序厅有自己的文字），三幕交接第二幕起按 header-enter 淡入
-  const [titleEntered, setTitleEntered] = useState(false)
   // 主展厅文字（朝代/镜名/简介）：三幕交接第二幕与镜子叠化并行淡入
+  //（顶部标题已移入序厅扉页，主展厅不再有 header）
   const [hallEntered, setHallEntered] = useState(false)
   const slotRef = useRef<HTMLDivElement | null>(null)
   const bridgeRef = useRef<HTMLImageElement | null>(null)
@@ -38,7 +37,6 @@ export default function App() {
     onEnterHall: () => {
       nav.commitHandover(HALL_START)
       setFlipped(false)
-      setTitleEntered(true)
       setHallEntered(true)
     },
     onUnlock: () => {
@@ -83,10 +81,9 @@ export default function App() {
     return () => clearTimeout(timer)
   }, [mirror.id, flipped, phase, inHall])
 
-  // 回到序厅页（如商镜左滑返回）时复位入场态：再次交接时标题/文字重新淡入
+  // 回到序厅页（如商镜左滑返回）时复位入场态：再次交接时文字重新淡入
   useEffect(() => {
     if (inHall) return
-    setTitleEntered(false)
     setHallEntered(false)
   }, [inHall])
 
@@ -120,15 +117,9 @@ export default function App() {
     <div className="app">
       <div className="bg-tint" style={{ backgroundColor: mirror.tint }} />
 
-      <header
-        className={`app-header${inHall ? '' : ' header-hidden'}${titleEntered ? ' header-enter' : ''}`}
-      >
-        <h1 className="app-title">照见千年</h1>
-        <p className="app-subtitle">从一面铜镜，看见不同时代的审美</p>
-      </header>
-
       {/* 整页内容容器：镜子与介绍文字共享同一位移，滑动时作为整体联动。
-          序厅两页也在本容器内（OpeningPages 绝对定位层），与铜镜同一位移值 */}
+          序厅两页也在本容器内（OpeningPages 绝对定位层），与铜镜同一位移值。
+          顶部标题已移入序厅扉页（展览扉页化），主展厅不再渲染 header */}
       <motion.div
         className="page"
         style={{ y, opacity }}
