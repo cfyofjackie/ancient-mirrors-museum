@@ -4,6 +4,7 @@ import mirrors from './data/mirrors'
 import type { Hotspot } from './data/mirrors'
 import MirrorStage from './components/MirrorStage'
 import InfoCard, { type SheetContent } from './components/InfoCard'
+import OpeningOverlay, { openingShouldPlay } from './components/OpeningOverlay'
 import usePageNavigation from './interaction/usePageNavigation'
 
 const HOTSPOT_DWELL = 1600
@@ -14,9 +15,13 @@ export default function App() {
   const [flipped, setFlipped] = useState(false)
   const [showHotspots, setShowHotspots] = useState(false)
   const [waiting, setWaiting] = useState(false)
+  // 开场序厅：本会话首次进入时播放；遮罩期间屏蔽底层翻页手势（window 级监听经 blocked 生效）
+  const [openingActive, setOpeningActive] = useState(openingShouldPlay)
+  // 开场淡出时主标题一次性入场淡入；无开场（本会话再次进入等）不加类、标题直接可见
+  const [titleEntered, setTitleEntered] = useState(false)
   const { index, phase, y, opacity, ready } = usePageNavigation({
     count: mirrors.length,
-    blocked: sheet !== null,
+    blocked: sheet !== null || openingActive,
     onCommit: () => { setSheet(null); setFlipped(false) },
     onTap: () => setFlipped(value => !value),
   })
@@ -59,7 +64,7 @@ export default function App() {
     <div className="app">
       <div className="bg-tint" style={{ backgroundColor: mirror.tint }} />
 
-      <header className="app-header">
+      <header className={`app-header${titleEntered ? ' header-enter' : ''}`}>
         <h1 className="app-title">照见千年</h1>
         <p className="app-subtitle">从一面铜镜，看见不同时代的审美</p>
       </header>
@@ -100,6 +105,11 @@ export default function App() {
       {waiting && <p className="loading-notice" role="status">正在加载铜镜…</p>}
 
       <InfoCard content={sheetContent} onClose={() => setSheet(null)} />
+
+      {/* 开场序厅：fixed 遮罩盖在已渲染的主页面之上，结束时整体淡出并卸载 */}
+      {openingActive && (
+        <OpeningOverlay onReveal={() => setTitleEntered(true)} onDone={() => setOpeningActive(false)} />
+      )}
     </div>
   )
 }

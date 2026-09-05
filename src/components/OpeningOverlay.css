@@ -1,0 +1,212 @@
+/* 开场序厅（OpeningOverlay）时间线（opening/design.md）：
+   0–0.25s 背景建立 → 0.25–1.20s 《磨镜图》浮现 → 0.70–1.35s「以铜为镜」
+   → 1.20–2.55s 叠化《对镜仕女图》→ 1.55–2.30s「可以正衣冠」
+   → 2.55–3.85s 画中镜桥接（WAAPI，组件内测量驱动）→ 3.45–4.05s 遮罩淡出露出主页面。
+   全程只用 opacity / transform（合成层友好）；z-index 高于 InfoCard（z20/21）。 */
+
+.opening-root {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow: hidden;
+  cursor: pointer;
+  /* 与 body 相同的展墙背景 + 颗粒：开场与主页面同底色，淡出无跳变、无纯黑闪屏 */
+  background-color: var(--bg);
+  background-image:
+    url('../textures/wall-grain.svg'),
+    url('../textures/wall-base.svg');
+  background-size: 800px 800px, cover;
+  background-position: center, center top;
+  background-repeat: repeat, no-repeat;
+  animation: open-root-out 0.6s ease 3.45s forwards;
+}
+
+/* 跳过时的快速淡出（清除未走完的时间线动画） */
+.opening-root.is-closing {
+  animation: none;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+@keyframes open-root-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* ---- 画卷层：竖版画 contain 式居中（横屏两侧自然露出深色延伸），边缘经渐变遮罩融入背景 ---- */
+
+.opening-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* 画框槽位：宽高比锁定 941/1672，宽度受视口宽/高双重约束（含 dvh，避免移动端地址栏跳动） */
+.painting-slot {
+  position: relative;
+  width: min(86vw, 50dvh);
+  aspect-ratio: 941 / 1672;
+}
+
+.opening-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+  /* 渐变遮罩消除矩形边界（素材本身已做深色融合，此处把四边与四角彻底融进展墙底色） */
+  mask-image: radial-gradient(75% 78% at 50% 52%, #000 42%, rgba(0, 0, 0, 0.5) 68%, transparent 92%);
+  -webkit-mask-image: radial-gradient(75% 78% at 50% 52%, #000 42%, rgba(0, 0, 0, 0.5) 68%, transparent 92%);
+}
+
+.opening-mojing {
+  animation:
+    open-mojing-in 0.95s cubic-bezier(0.25, 0.6, 0.3, 1) 0.25s both,
+    open-mojing-out 0.9s ease 1.3s forwards;
+}
+
+@keyframes open-mojing-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(1.03);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes open-mojing-out {
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+.opening-shinv {
+  animation:
+    open-shinv-in 0.9s cubic-bezier(0.25, 0.6, 0.3, 1) 1.2s both,
+    open-shinv-dim 0.95s ease 2.55s forwards;
+}
+
+@keyframes open-shinv-in {
+  from {
+    opacity: 0;
+    transform: translateY(42px) scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 仕女退入背景：保留低透明度残影，遮罩整体淡出时一并退场 */
+@keyframes open-shinv-dim {
+  to {
+    opacity: 0.35;
+  }
+}
+
+/* 画中镜桥接层：初始隐藏；2.55s 起（WAAPI）放大并移向主铜镜落位，轮廓接近时与 3D 镜交叉淡化 */
+.opening-bridge {
+  position: absolute;
+  left: 13.71%;
+  top: 56.76%;
+  width: 25.5%;
+  height: 19.14%;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+/* ---- 文案层：真实 HTML 文本，居中，块宽不超屏宽 50% ---- */
+
+.opening-copy {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: max(24dvh, calc(env(safe-area-inset-top) + 72px));
+  max-width: 50vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(14px, 3dvh, 26px);
+  text-align: center;
+  pointer-events: none;
+}
+
+.opening-line1 {
+  font-size: clamp(30px, 8vw, 44px);
+  letter-spacing: 0.26em;
+  margin-left: 0.26em; /* 抵消末字符字距，保持视觉居中 */
+  font-weight: 400;
+  color: rgba(235, 226, 205, 0.9);
+  animation:
+    open-text-in 0.65s cubic-bezier(0.25, 0.6, 0.3, 1) 0.7s both,
+    open-text-out 0.6s ease 2.55s forwards;
+}
+
+/* 第二行：字号约为第一行 60%、透明度更低、行距由容器 gap 舒展 */
+.opening-line2 {
+  font-size: clamp(18px, 4.8vw, 26px);
+  letter-spacing: 0.2em;
+  margin-left: 0.2em;
+  color: rgba(210, 202, 185, 0.62);
+  animation:
+    open-text-in 0.75s cubic-bezier(0.25, 0.6, 0.3, 1) 1.55s both,
+    open-text-out 0.6s ease 2.55s forwards;
+}
+
+@keyframes open-text-in {
+  from {
+    opacity: 0;
+    transform: translateY(9px);
+  }
+}
+
+@keyframes open-text-out {
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* ---- prefers-reduced-motion：不做画卷时间线（组件挂 is-reduced），仅背景 + 静态文案快速淡出 ---- */
+
+.opening-root.is-reduced .opening-layer {
+  display: none;
+}
+
+.opening-root.is-reduced .opening-line1,
+.opening-root.is-reduced .opening-line2 {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .opening-root,
+  .opening-mojing,
+  .opening-shinv,
+  .opening-line1,
+  .opening-line2 {
+    animation: none;
+  }
+}
+
+/* ---- 开场结束：主页面标题一次性入场淡入（仅在播放过开场时由 App 挂载） ---- */
+
+.app-header.header-enter {
+  animation: header-enter 0.55s ease both;
+}
+
+@keyframes header-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
