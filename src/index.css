@@ -127,7 +127,7 @@ body {
 
 /* 整页内容容器：镜子画布区 + 底部介绍文字，作为整体随滑动联动。
    will-change 提升为独立合成层——拖拽/切换的 transform 更新走纯 GPU 合成，不触发内容重绘；
-   position:relative 作为序厅两页（.opening-layer）与画中镜桥接层（.handover-bridge）的定位容器 */
+   position:relative 作为序厅两页（.opening-layer）的定位容器 */
 .page {
   flex: 1;
   min-height: 0;
@@ -237,9 +237,7 @@ body {
 }
 
 .page[data-phase='waiting'],
-.page[data-phase='waiting'] *,
-.page[data-phase='handover'],
-.page[data-phase='handover'] * {
+.page[data-phase='waiting'] * {
   pointer-events: none;
 }
 
@@ -600,7 +598,7 @@ body {
   z-index: 2;
 }
 
-/* 主展厅文字（朝代/镜名/简介）：三幕交接第二幕（text-enter 挂载）并行淡入；
+/* 主展厅文字（朝代/镜名/简介）：翻入展厅（text-enter 挂载）时淡入；
    未入场前隐藏（序厅期间本就被序厅层覆盖） */
 .app-footer:not(.text-enter) {
   visibility: hidden;

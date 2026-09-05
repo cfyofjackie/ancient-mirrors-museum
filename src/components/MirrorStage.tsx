@@ -9,8 +9,6 @@ interface MirrorStageProps {
   mirror: Mirror
   flipped: boolean
   showHotspots: boolean
-  /** 三幕交接第二/三幕：铜镜轻微缩放落定动效（scale 1.02 → 1.0） */
-  settling?: boolean
   onHotspotOpen: (hotspot: Hotspot) => void
   onReady: () => void
 }
@@ -23,7 +21,6 @@ export default function MirrorStage({
   mirror,
   flipped,
   showHotspots,
-  settling,
   onHotspotOpen,
   onReady,
 }: MirrorStageProps) {
@@ -32,7 +29,7 @@ export default function MirrorStage({
   const use3D = webgl && !failed && !!mirror.art3d
 
   return (
-    <div className={`mirror-stage${settling ? ' handover-settle' : ''}`}>
+    <div className="mirror-stage">
       <div className="mirror-slide">
         <div className="mirror-3d-wrap">
           {use3D && mirror.art3d ? (

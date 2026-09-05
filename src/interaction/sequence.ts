@@ -16,9 +16,6 @@ export const OPENING_COUNT = 2
 /** 主展厅第一面镜（商镜）在序列中的位置 */
 export const HALL_START = OPENING_COUNT
 
-/** 仕女页（三幕交接的触发页）在序列中的位置 */
-export const SHINV_PAGE = 1
-
 export const SEQUENCE: PageItem[] = [
   { kind: 'opening', page: 1 },
   { kind: 'opening', page: 2 },

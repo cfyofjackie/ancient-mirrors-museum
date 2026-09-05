@@ -31,14 +31,14 @@ try {
   await document.fonts.ready
   await delay(3500)
   // 序厅两页已并入主翻页序列（index 0/1，与铜镜共用同一手势体系，无遮罩组件）：
-  // 先滑到仕女页，再上滑触发三幕交接进入主展厅（商镜）。
+  // 先滑到仕女页，再上滑以标准翻页过渡进入主展厅（商镜）。
   assert(document.querySelectorAll('.dynasty-dots span').length === 11, 'Dots indicator is not 11 items')
   assert(page().dataset.page === '0' && page().dataset.kind === 'opening', 'App did not start on the first opening page')
   await swipe(-150) // 磨镜页 → 仕女页
   await until(() => page().dataset.page === '1', 'Did not reach second opening page')
   await delay(600)
-  await swipe(-150) // 仕女页 → 三幕交接 → 商镜
-  await until(() => page().dataset.page === '2' && page().dataset.kind === 'mirror' && idle(), 'Three-act handover did not land on the hall')
+  await swipe(-150) // 仕女页 → 商镜（标准滑动翻页）
+  await until(() => page().dataset.page === '2' && page().dataset.kind === 'mirror' && idle(), 'Did not land on the hall')
   await settledAt('商')
   await delay(400)
   // 数据现为九朝，按年代排序：商 春秋 战国 汉 隋 唐 宋 元 明（商为序列第 3 项）。

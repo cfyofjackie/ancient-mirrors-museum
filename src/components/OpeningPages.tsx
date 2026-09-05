@@ -1,4 +1,3 @@
-import type { Ref } from 'react'
 import mojingUrl from '../textures/opening/mojing.webp'
 import shinvUrl from '../textures/opening/shinv.webp'
 import './OpeningPages.css'
@@ -8,10 +7,6 @@ interface OpeningPagesProps {
   page: 1 | 2
   /** 当前序列项是否为序厅页（非序厅页整体隐藏，不再拦截指针） */
   active: boolean
-  /** 三幕交接第一幕：内容淡出让位，画中镜桥接层单独放大 */
-  yielding: boolean
-  /** 仕女页画框槽位 ref：交接时刻测量画中镜裁切位置 */
-  slotRef: Ref<HTMLDivElement>
 }
 
 /**
@@ -21,14 +16,10 @@ interface OpeningPagesProps {
  * 第 2 页《对镜仕女图》= 展览前言：画大幅铺陈 + 前言两行 +「入展」入口指示。
  * 纯 DOM（无 WebGL 也正常显示），挂在主序列 .page 位移容器内，
  * 手势全部由 usePageNavigation 的 window 级监听统一处理，本组件不持有任何监听/motion value。
- * 第 2 页画框槽位仍保持 941/1672 锁比、img 填满槽位（画中镜裁切比例 BRIDGE_CROP 依赖该映射）。
  */
-export default function OpeningPages({ page, active, yielding, slotRef }: OpeningPagesProps) {
+export default function OpeningPages({ page, active }: OpeningPagesProps) {
   return (
-    <div
-      className={`opening-layer${active ? '' : ' is-hidden'}${yielding ? ' is-yielding' : ''}`}
-      aria-hidden="true"
-    >
+    <div className={`opening-layer${active ? '' : ' is-hidden'}`} aria-hidden="true">
       {/* 第 1 页：展览扉页（磨镜页） */}
       <section className={`opening-page opening-title-page${page === 1 ? ' is-current' : ''}`}>
         <div className="title-page-head">
@@ -47,9 +38,9 @@ export default function OpeningPages({ page, active, yielding, slotRef }: Openin
         <p className="opening-hint">向上滑动，开始观展</p>
       </section>
 
-      {/* 第 2 页：展览前言（仕女页；painting-slot 供交接时刻测量画中镜裁切位置） */}
+      {/* 第 2 页：展览前言（仕女页） */}
       <section className={`opening-page opening-preface-page${page === 2 ? ' is-current' : ''}`}>
-        <div className="painting-slot" ref={slotRef}>
+        <div className="painting-slot">
           <img className="opening-img" src={shinvUrl} alt="" draggable={false} />
         </div>
         <div className="preface-copy">
