@@ -10,10 +10,10 @@
       <stop offset="0.45" stop-color="#262c33"/>
       <stop offset="1" stop-color="#171c22"/>
     </linearGradient>
-    <radialGradient id="glow" cx="0.5" cy="0.05" r="0.8">
-      <stop offset="0" stop-color="#cdba9b" stop-opacity="0.5"/>
-      <stop offset="0.32" stop-color="#a99878" stop-opacity="0.22"/>
-      <stop offset="0.68" stop-color="#8a8272" stop-opacity="0.07"/>
+    <radialGradient id="glow" cx="0.5" cy="0.45" r="0.7">
+      <stop offset="0" stop-color="#cdba9b" stop-opacity="0.58"/>
+      <stop offset="0.32" stop-color="#a99878" stop-opacity="0.26"/>
+      <stop offset="0.68" stop-color="#8a8272" stop-opacity="0.08"/>
       <stop offset="1" stop-color="#8a8272" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="patina" cx="0.9" cy="0.98" r="0.38">

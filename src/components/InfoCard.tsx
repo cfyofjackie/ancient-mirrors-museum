@@ -45,6 +45,9 @@ export default function InfoCard({ content, onClose }: InfoCardProps) {
             transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
           >
             <div className="sheet-handle" />
+            <button type="button" className="sheet-x" onClick={onClose} aria-label="关闭">
+              ×
+            </button>
             {content.imageUrl ? (
               <figure className="ref-figure">
                 <img src={content.imageUrl} alt={content.imageAlt ?? content.title} />
@@ -70,9 +73,6 @@ export default function InfoCard({ content, onClose }: InfoCardProps) {
                 )}
               </p>
             )}
-            <button type="button" className="sheet-close" onClick={onClose}>
-              关闭
-            </button>
           </motion.div>
         </>
       )}

@@ -393,8 +393,14 @@ body {
   width: min(100%, 480px);
   max-height: 72dvh;
   overflow-y: auto;
-  background: #262d34;
-  border: 1px solid rgba(233, 227, 212, 0.12);
+  /* 深色宣纸/墨迹质感：半透明基底 + 背景模糊 + 颗粒纹理叠层 + 淡金描边 */
+  background:
+    url('./textures/wall-grain.svg'),
+    rgba(20, 20, 20, 0.85);
+  background-size: 400px 400px, auto;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(212, 175, 55, 0.18);
   border-bottom: none;
   border-radius: 16px 16px 0 0;
   padding: 12px 22px calc(20px + env(safe-area-inset-bottom));
@@ -434,23 +440,24 @@ body {
   text-underline-offset: 3px;
 }
 
-.sheet-close {
-  margin-top: 16px;
-  width: 100%;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid var(--ink-faint);
+/* 右上角极简关闭按钮：44×44 命中区、米白低透明度 */
+.sheet-x {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 44px;
+  height: 44px;
+  border: none;
   background: transparent;
-  color: var(--ink-dim);
-  font-family: var(--font-serif);
-  font-size: 14px;
-  letter-spacing: 0.2em;
+  color: rgba(233, 227, 212, 0.55);
+  font-size: 22px;
+  line-height: 1;
   cursor: pointer;
+  transition: color 0.2s;
 }
 
-.sheet-close:hover {
+.sheet-x:hover {
   color: var(--ink);
-  border-color: var(--ink-dim);
 }
 
 .ref-figure {
@@ -463,6 +470,10 @@ body {
   object-fit: contain;
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.25);
+  /* 白底文物图与深色面板融合：边缘径向渐隐 + 轻微降透明度，白框感消失 */
+  -webkit-mask-image: radial-gradient(ellipse 100% 100% at 50% 50%, #000 62%, transparent 96%);
+  mask-image: radial-gradient(ellipse 100% 100% at 50% 50%, #000 62%, transparent 96%);
+  opacity: 0.92;
 }
 
 .ref-figure figcaption {
@@ -715,10 +726,10 @@ body {
 }
 
 .dynasty-name {
-  font-size: clamp(34px, 9vw, 48px);
+  font-size: clamp(40px, 11vw, 58px);
   line-height: 1;
   font-weight: 700;
-  color: var(--accent);
+  color: #c84032;
 }
 
 .mirror-name {
@@ -750,33 +761,30 @@ body {
 }
 
 .dynasty-dots span {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--ink-faint);
-  transition: opacity 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
+  width: 14px;
+  height: 1px;
+  border-radius: 1px;
+  background: rgba(212, 175, 55, 0.25);
+  transition: width 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
 }
 
 .dynasty-dots span.active {
-  background: var(--accent);
-  opacity: 1;
-  transform: scale(1.4);
+  width: 26px;
+  background: #c84032;
+  box-shadow: 0 0 8px rgba(200, 64, 50, 0.55);
 }
 
-/* 序厅两项（磨镜页/仕女页）：空心小点、更低透明度，与展厅九镜区分 */
+/* 序厅两项（磨镜页/仕女页）：更短更淡的刻度线，与展厅九镜区分 */
 .dynasty-dots span.opening-dot {
-  width: 4px;
-  height: 4px;
-  background: transparent;
-  border: 1px solid var(--ink-faint);
-  opacity: 0.7;
+  width: 8px;
+  opacity: 0.5;
 }
 
 .dynasty-dots span.opening-dot.active {
-  background: transparent;
-  border-color: var(--accent);
+  width: 26px;
+  background: #c84032;
+  box-shadow: 0 0 8px rgba(200, 64, 50, 0.55);
   opacity: 1;
-  transform: scale(1.4);
 }
 
 .hint {
