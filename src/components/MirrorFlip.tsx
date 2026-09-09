@@ -43,11 +43,15 @@ export default function MirrorFlip({ mirror, flipped, onReady }: { mirror: Mirro
           draggable={false}
         /> : <div className="mirror-face mirror-unavailable">镜背图像暂不可用</div>}
         {available.front ? <div
-          className="mirror-face mirror-face-front mirror-front-fallback"
+          className="mirror-face mirror-face-front"
           role="img"
           aria-label={`${mirror.dynasty} · ${mirror.name}（镜面）`}
-          style={{ backgroundImage: `url("${mirror.frontImage}")` }}
-        /> : <div className="mirror-face mirror-face-front mirror-unavailable">镜面图像暂不可用</div>}
+        >
+          <div
+            className={`mirror-front-fallback mirror-fallback-shape-${mirror.art3d?.shape.type ?? 'circle'}`}
+            style={{ backgroundImage: `url("${mirror.frontImage}")` }}
+          />
+        </div> : <div className="mirror-face mirror-face-front mirror-unavailable">镜面图像暂不可用</div>}
       </motion.div>
     </div>
   )

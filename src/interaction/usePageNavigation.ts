@@ -96,10 +96,11 @@ export default function usePageNavigation(options: Options) {
       if (pointer || event.button !== 0 || event.isPrimary === false || latest.current.blocked || target(event)?.closest(interactive)) return
       const deferred = state.current === 'waiting'
       const wasIdle = state.current === 'idle'
+      const canTapMirror = wasIdle || state.current === 'entering'
       if (!deferred) stop()
       queued.current = null
       pointer = { id: event.pointerId, x: event.clientX, y: event.clientY, offset: y.get(), maxDistance: 0,
-        deferred, tap: wasIdle && !!target(event)?.closest('.mirror-3d-wrap'), samples: [{ y: event.clientY, t: event.timeStamp }] }
+        deferred, tap: canTapMirror && !!target(event)?.closest('.mirror-3d-wrap'), samples: [{ y: event.clientY, t: event.timeStamp }] }
       if (!deferred) {
         controls.current = [animate(opacity, 1, { duration: 0.12 })]
         changePhase('dragging')

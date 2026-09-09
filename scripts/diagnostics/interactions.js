@@ -87,9 +87,12 @@ try {
     key(1); await delay(40)
     await swipe(100); await settledAt('春秋')
   })
-  await test('flip reverses and page switch resets to the decorated back', async () => {
+  await test('first tap wakes, second tap flips, and page switch resets the mirror', async () => {
     await tap()
-    assert(page().dataset.flipped === 'true', 'Tap did not update flipped state')
+    assert(page().dataset.awake === 'true', 'First tap did not wake the mirror')
+    assert(page().dataset.flipped === 'false', 'Wake tap unexpectedly flipped the mirror')
+    await tap()
+    assert(page().dataset.flipped === 'true', 'Second tap did not update flipped state')
     if(mirror().tagName==='CANVAS' && window.__mirrorProbe.rendererInfo) {
       await until(() => Math.abs(window.__mirrorProbe.rendererInfo.flip-Math.PI)<.02, 'Mirror did not flip', 3000)
     } else {
@@ -97,8 +100,10 @@ try {
     }
     await tap()
     await delay(100)
+    assert(page().dataset.flipped === 'false', 'Third tap did not return to the decorated back')
     key(1); await settledAt('战国')
     await delay(750)
+    assert(page().dataset.awake === 'false', 'New page retained the previous mirror wake state')
     if(mirror().tagName==='CANVAS' && window.__mirrorProbe.rendererInfo) assert(Math.abs(window.__mirrorProbe.rendererInfo.flip)<.02,'New mirror retained old flip')
   })
   await test('reference sheet blocks background wheel and keyboard navigation', async () => {
@@ -111,8 +116,11 @@ try {
     document.querySelector('.sheet-x').click()
     await until(()=>!document.querySelector('.sheet'),'Reference sheet did not close')
   })
-  await test('hotspots return after navigation and open their information card', async () => {
-    await until(()=>document.querySelector('.hotspot'),'Hotspot did not return',5000)
+  await test('pattern button reveals hotspots and opens their information card', async () => {
+    await tap()
+    await until(()=>document.querySelector('.pattern-entry'),'Pattern button did not appear',3000)
+    document.querySelector('.pattern-entry').click()
+    await until(()=>document.querySelector('.hotspot'),'Pattern button did not reveal hotspots',3000)
     document.querySelector('.hotspot').click()
     await until(()=>document.querySelector('.sheet'),'Hotspot card did not open')
     document.querySelector('.sheet-x').click()

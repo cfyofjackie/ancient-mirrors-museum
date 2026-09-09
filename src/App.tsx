@@ -7,8 +7,9 @@ import InfoCard, { type SheetContent } from './components/InfoCard'
 import OpeningPages from './components/OpeningPages'
 import usePageNavigation from './interaction/usePageNavigation'
 import { SEQUENCE } from './interaction/sequence'
+import { REFLECTIONS } from './data/reflections'
+import { TABLEAUX } from './data/tableaux'
 
-const HOTSPOT_DWELL = 1600
 type Sheet = { type: 'hotspot'; hotspot: Hotspot } | { type: 'reference' } | null
 
 export default function App() {
@@ -16,12 +17,28 @@ export default function App() {
   const [flipped, setFlipped] = useState(false)
   const [showHotspots, setShowHotspots] = useState(false)
   const [waiting, setWaiting] = useState(false)
+  const [awake, setAwake] = useState(false)
+  const awakeRef = useRef(false)
 
   const nav = usePageNavigation({
     count: SEQUENCE.length,
     blocked: sheet !== null,
-    onCommit: () => { setSheet(null); setFlipped(false) },
-    onTap: () => setFlipped(value => !value),
+    onCommit: () => {
+      setSheet(null)
+      setFlipped(false)
+      setShowHotspots(false)
+      setAwake(false)
+      awakeRef.current = false
+    },
+    onTap: () => {
+      if (!awakeRef.current) {
+        awakeRef.current = true
+        setAwake(true)
+        return
+      }
+      setShowHotspots(false)
+      setFlipped(value => !value)
+    },
   })
   const { index, phase, y, opacity, ready } = nav
   const item = SEQUENCE[index]
@@ -32,6 +49,8 @@ export default function App() {
   // 序厅两页期间主展厅已按商镜渲染（藏在序厅之下）：翻入展厅时商镜纹理早已就绪，无需等待
   const mirror = mirrors[item.kind === 'mirror' ? item.index : 0]
   const mirrorIndex = item.kind === 'mirror' ? item.index : 0
+  const reflection = REFLECTIONS[mirror.id]
+  const tableau = TABLEAUX[mirror.id]
   const onReady = useCallback(() => {
     readyMirror.current = mirrorIndex
     ready(index)
@@ -55,12 +74,7 @@ export default function App() {
     }
   }, [phase, index, inHall, mirrorIndex, ready])
 
-  useEffect(() => {
-    setShowHotspots(false)
-    if (!inHall || flipped || phase !== 'idle') return
-    const timer = setTimeout(() => setShowHotspots(true), HOTSPOT_DWELL)
-    return () => clearTimeout(timer)
-  }, [mirror.id, flipped, phase, inHall])
+  useEffect(() => { setShowHotspots(false) }, [mirror.id, flipped, inHall])
 
   const sheetContent: SheetContent | null = (() => {
     if (!sheet) return null
@@ -94,8 +108,18 @@ export default function App() {
         data-kind={item.kind}
         data-page={index}
         data-flipped={flipped}
+        data-mirror={inHall ? mirror.id : undefined}
+        data-awake={inHall ? awake : undefined}
         aria-busy={phase === 'waiting'}
       >
+        {inHall && tableau && (
+          <div className="tableau-backdrop" aria-hidden="true">
+            <picture>
+              <source media="(max-width: 819px)" srcSet={tableau.mobile} />
+              <img src={tableau.desktop} alt="" draggable={false} />
+            </picture>
+          </div>
+        )}
         {/* 展厅采用稳定的展签 / 展品 / 控制三区。MirrorStage 始终挂载，保证序厅期间的
             商镜预载与 3D 场景生命周期不变；仅由 CSS 在桌面和手机间调整布局。 */}
         <div className="hall-layout">
@@ -114,22 +138,46 @@ export default function App() {
             onHotspotOpen={(hotspot) => setSheet({ type: 'hotspot', hotspot })}
             onReady={onReady}
             interactionActive={phase !== 'idle'}
+            reflection={awake ? reflection : undefined}
+            reflectionVisible={awake && flipped}
+            dormant={inHall && !awake}
+            tableauMode={inHall}
           />
 
           <footer className={`app-footer${inHall ? ' text-enter' : ''}`}>
-            {mirror.reference && (
-              <button
-                type="button"
-                className="ref-entry"
-                aria-label="查看史实资料"
-                onClick={() => setSheet({ type: 'reference' })}
-              >
-                <span>史实</span>
-                <span>资料</span>
-              </button>
-            )}
+            <div className="footer-actions">
+              {mirror.reference && (
+                <button
+                  type="button"
+                  className="ref-entry"
+                  aria-label="查看史实资料"
+                  onClick={() => setSheet({ type: 'reference' })}
+                >
+                  <span>史实</span>
+                  <span>资料</span>
+                </button>
+              )}
+              {inHall && awake && !flipped && mirror.hotspots.length > 0 && (
+                <button
+                  type="button"
+                  className="reflection-entry pattern-entry"
+                  aria-label={showHotspots ? '隐藏纹样标记' : '查看纹样标记'}
+                  aria-pressed={showHotspots}
+                  onClick={() => setShowHotspots(value => !value)}
+                >
+                  <span>{showHotspots ? '隐去' : '细看'}</span>
+                  <span>纹样</span>
+                </button>
+              )}
+            </div>
 
-            <p className="hint">上下滑动切换朝代 · 点击铜镜翻面</p>
+            <p className={`hint${flipped ? ' reflection-disclosure' : ''}`}>
+              {!awake
+                ? '轻触画中铜镜，让它从画卷中醒来'
+                : flipped && reflection
+                  ? `${reflection.label} · 艺术复原 · 点击铜镜翻回镜背`
+                  : showHotspots ? '轻触标记查看纹样说明' : '铜镜已醒 · 点击翻至镜面'}
+            </p>
           </footer>
         </div>
 

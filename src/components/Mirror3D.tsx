@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Art3D } from '../data/mirrors'
+import type { ReflectionProfile } from '../data/reflections'
 import { createMirrorScene } from '../rendering/mirrorScene'
 
 let supported: boolean | undefined
@@ -22,6 +23,8 @@ type Props = {
   onReady?: () => void
   onError?: () => void
   interactionActive?: boolean
+  reflection?: ReflectionProfile
+  reflectionVisible?: boolean
 }
 
 /** 常驻场景；只有资源应用并绘制后才向页面报告就绪。 */
@@ -57,6 +60,9 @@ export default function Mirror3D(props: Props) {
   useEffect(() => { scene.current?.setMode(mode) }, [mode])
   useEffect(() => { if (flipped !== undefined) scene.current?.setFlipped(flipped) }, [flipped])
   useEffect(() => { scene.current?.setInteractionActive(!!props.interactionActive) }, [props.interactionActive])
+  useEffect(() => {
+    scene.current?.setReflection(props.reflection, !!props.reflectionVisible)
+  }, [props.reflection, props.reflectionVisible])
   return <canvas ref={canvas} className={className} style={{ visibility: displayed === art ? 'visible' : 'hidden' }}
     onClick={() => { if (latest.current.flipped === undefined) scene.current?.toggle() }} />
 }

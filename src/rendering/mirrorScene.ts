@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import mirrors from '../data/mirrors'
 import type { Art3D, Shape3D } from '../data/mirrors'
+import type { ReflectionProfile } from '../data/reflections'
 
 const R = 1.22
 const MIRROR_Y = 0
@@ -341,12 +342,29 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
   const empty = new THREE.BufferGeometry()
   const back = new THREE.Mesh(empty, mats.back)
   const front = new THREE.Mesh(empty, mats.front)
+  const reflectionMaterial = new THREE.MeshStandardMaterial({
+    transparent: true,
+    opacity: 0,
+    metalness: 0.18,
+    roughness: 0.92,
+    envMapIntensity: 0.08,
+    depthWrite: false,
+    blending: THREE.MultiplyBlending,
+    premultipliedAlpha: true,
+  })
+  const reflection = new THREE.Mesh(empty, reflectionMaterial)
   const edge = new THREE.Mesh(empty, mats.edge)
   front.rotation.y = Math.PI
   front.position.z = 0.071
+  reflection.rotation.y = Math.PI
+  // 镜面翻到朝向观众时，局部 +z 会随父组旋到远侧，因此数值需略小于 front，
+  // 才能让人物层位于铜面之前而不被深度缓冲遮住。
+  reflection.position.z = 0.069
+  reflection.renderOrder = 2
+  reflection.visible = false
   edge.rotation.x = Math.PI / 2
   const disc = new THREE.Group()
-  disc.add(back, edge, front)
+  disc.add(back, edge, front, reflection)
   disc.position.y = MIRROR_Y
   scene.add(disc)
 
@@ -443,7 +461,7 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
     mats.back.map = resource.flat
     mats.back.normalMap = resource.normal
     if (firstMaps) mats.back.needsUpdate = true
-    back.geometry = front.geometry = resource.geometry.face
+    back.geometry = front.geometry = reflection.geometry = resource.geometry.face
     edge.geometry = resource.geometry.edge
     flip.value = flip.from = flip.to = desiredFlip ? Math.PI : 0
     flip.start = -1
@@ -466,6 +484,34 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
     edge.material = mats.edge
     Object.values(old).forEach(material => material.dispose())
     invalidate()
+  }
+  let reflectionGeneration = 0
+  const setReflection = async (profile?: ReflectionProfile, visible = false) => {
+    const gen = ++reflectionGeneration
+    if (!profile || !visible) {
+      reflection.visible = false
+      reflectionMaterial.opacity = 0
+      invalidate()
+      return
+    }
+    try {
+      const map = await getTexture(profile.imageUrl, true, 0)
+      if (disposed || gen !== reflectionGeneration) return
+      // 倒影沿镜面左右翻转；贴图本身保留透明边缘，与铜色底材自然叠合。
+      map.wrapS = THREE.RepeatWrapping
+      map.repeat.x = -1
+      map.offset.x = 1
+      map.needsUpdate = true
+      reflectionMaterial.map = map
+      reflectionMaterial.opacity = profile.opacity
+      reflectionMaterial.needsUpdate = true
+      reflection.scale.set(profile.scale ?? 1, profile.scale ?? 1, 1)
+      reflection.position.y = ((profile.offsetY ?? 0) / 100) * -2.44
+      reflection.visible = true
+      invalidate()
+    } catch (error) {
+      if (gen === reflectionGeneration) console.warn('人物倒影贴图加载失败:', error)
+    }
   }
   const onPointer = (event: PointerEvent) => {
     // 手指/按住拖拽仅移动页面，不再让 3D 倾斜与翻页争用每帧预算。
@@ -509,7 +555,7 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
   canvas.addEventListener('webglcontextlost', contextLost)
 
   return {
-    applyArt, setFlipped, setMode,
+    applyArt, setFlipped, setMode, setReflection,
     setInteractionActive(active: boolean) {
       if (interactionActive === active) return
       interactionActive = active
@@ -542,6 +588,7 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
       geometries.forEach(geometry => { geometry.face.dispose(); geometry.edge.dispose() })
       empty.dispose()
       Object.values(mats).forEach(material => material.dispose())
+      reflectionMaterial.dispose()
       frontSurface.color.dispose()
       frontSurface.roughness.dispose()
       gradientMap?.dispose()

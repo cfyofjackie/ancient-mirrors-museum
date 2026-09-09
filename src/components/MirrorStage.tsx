@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
+import type { CSSProperties } from 'react'
 import type { Hotspot, Mirror } from '../data/mirrors'
+import type { ReflectionProfile } from '../data/reflections'
 import Mirror3D, { hasWebGL } from './Mirror3D'
 import MirrorFlip from './MirrorFlip'
 import HotspotComponent from './Hotspot'
@@ -12,6 +14,10 @@ interface MirrorStageProps {
   onHotspotOpen: (hotspot: Hotspot) => void
   onReady: () => void
   interactionActive: boolean
+  reflection?: ReflectionProfile
+  reflectionVisible: boolean
+  dormant?: boolean
+  tableauMode?: boolean
 }
 
 /**
@@ -25,9 +31,14 @@ export default function MirrorStage({
   onHotspotOpen,
   onReady,
   interactionActive,
+  reflection,
+  reflectionVisible,
+  dormant = false,
+  tableauMode = false,
 }: MirrorStageProps) {
   const webgl = useMemo(() => hasWebGL(), [])
   const [failed, setFailed] = useState(false)
+  const [loadedReflection, setLoadedReflection] = useState<string | null>(null)
   const use3D = webgl && !failed && !!mirror.art3d
 
   return (
@@ -41,9 +52,37 @@ export default function MirrorStage({
               onReady={onReady}
               onError={() => setFailed(true)}
               interactionActive={interactionActive}
+              reflection={reflection}
+              reflectionVisible={reflectionVisible}
+              className={dormant ? 'is-dormant' : undefined}
             />
           ) : (
             <MirrorFlip mirror={mirror} flipped={flipped} onReady={onReady} />
+          )}
+          {tableauMode && (
+            <div className={`flat-mirror flat-mirror-${mirror.art3d?.shape.type ?? 'circle'}${dormant ? '' : ' is-awake'}`} aria-hidden="true">
+              <img src={mirror.art3d?.flat ?? mirror.backImage} alt="" draggable={false} />
+              <span>轻触铜镜，让它醒来</span>
+            </div>
+          )}
+          {!use3D && reflection && flipped && (
+            <div
+              className={`mirror-reflection reflection-shape-${mirror.art3d?.shape.type ?? 'circle'}${reflectionVisible ? ' is-visible' : ''}`}
+              style={{
+                '--reflection-opacity': reflection.opacity,
+                '--reflection-scale': reflection.scale ?? 1,
+                '--reflection-offset-y': `${reflection.offsetY ?? 0}%`,
+              } as CSSProperties}
+              aria-hidden="true"
+            >
+              <img
+                className={loadedReflection === reflection.imageUrl ? 'is-loaded' : ''}
+                src={reflection.imageUrl}
+                alt=""
+                draggable={false}
+                onLoad={() => setLoadedReflection(reflection.imageUrl)}
+              />
+            </div>
           )}
           {!flipped && (
             <div className="hotspot-layer">
