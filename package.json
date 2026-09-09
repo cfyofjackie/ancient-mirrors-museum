@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:xhs": "tsc --noEmit && vite build --config vite.xhs.config.ts",
     "preview": "vite preview",
     "placeholders": "node scripts/make-placeholders.mjs",
     "font:subset": "node scripts/subset-font.mjs",

@@ -204,13 +204,8 @@ export default function InfoCard({ content, onClose }: InfoCardProps) {
               )}
               {content.source && (
                 <p className="sheet-source">
-                  图片来源：{content.sourceUrl ? (
-                    <a href={content.sourceUrl} target="_blank" rel="noreferrer">
-                      {content.source}
-                    </a>
-                  ) : (
-                    content.source
-                  )}
+                  {/* 小工具容器禁跳转外链，来源仅作标注展示，不做可点击外联 */}
+                  图片来源：<span title={content.sourceUrl}>{content.source}</span>
                 </p>
               )}
             </div>

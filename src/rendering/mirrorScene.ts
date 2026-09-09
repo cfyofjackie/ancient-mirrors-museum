@@ -198,7 +198,7 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
   const scene = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 50)
   camera.position.set(0, 0, 4.35)
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
   renderer.toneMapping = THREE.ACESFilmicToneMapping
   renderer.toneMappingExposure = 0.95
   const pmrem = new THREE.PMREMGenerator(renderer)
@@ -525,7 +525,7 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
     const width = canvas.clientWidth
     const height = canvas.clientHeight
     if (!width || !height) return
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
     renderer.setSize(width, height, false)
     camera.aspect = width / height
     camera.updateProjectionMatrix()

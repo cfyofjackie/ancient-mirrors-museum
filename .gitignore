@@ -1,7 +1,14 @@
 node_modules/
 dist/
+dist-xhs/
+dist-xhs-pkg/
 *.local
 .DS_Store
+
+# 小红书小工具官方打包 skill（下载的工具，非项目源码，不进版本库）
+.skill/
+_minitool.zip
+ancient-mirrors-museum-xhs.zip
 
 # 用户原始素材（大图，不进版本库；优化产物在 assets/ 正常提交）
 assets-src/
