@@ -180,13 +180,13 @@ export default function App() {
               )}
             </div>
 
-            <p className={`hint${flipped ? ' reflection-disclosure' : ''}${awake ? ' breathe' : ''}`}>
-              {!awake
-                ? '轻触画中铜镜，让它从画卷中醒来'
-                : flipped && reflection
+            {awake && (
+              <p className={`hint${flipped ? ' reflection-disclosure' : ''} breathe`}>
+                {flipped && reflection
                   ? `${reflection.label} · 艺术复原 · 点击铜镜翻回镜背`
                   : showHotspots ? '轻触标记查看纹样说明' : '铜镜已醒 · 点击翻至镜面'}
-            </p>
+              </p>
+            )}
           </footer>
         </div>
 
