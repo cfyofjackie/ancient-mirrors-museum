@@ -685,7 +685,9 @@ body {
   /* 水平居中由 Framer Motion 的 x: '-50%' 合成（CSS transform 会被动画覆盖） */
   width: min(calc(100% - 32px), 540px);
   max-height: min(78dvh, 720px);
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   /* 深色宣纸/墨迹质感：半透明基底 + 背景模糊 + 颗粒纹理叠层 + 淡金描边 */
   background:
     url('./textures/wall-grain.svg'),
@@ -701,32 +703,38 @@ body {
   text-align: center;
 }
 
+/* 拖拽收起时锁定选择、显示抓手 cursor */
+.sheet.is-dragging {
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grabbing;
+}
+
 .sheet-body,
 .sheet-copy {
   min-width: 0;
 }
 
-/* 顶部拖拽区：拖住把手向下拉即可关闭；touch-action:none 让浏览器不抢竖向滚动，
-   卡片内容仍可在下方自由滚动（dragListener=false 只从本区触发拖拽）。 */
+/* 顶部把手横条：视觉提示可下拉关闭 */
 .sheet-grab {
+  flex: 0 0 auto;
   display: block;
   width: 100%;
-  min-height: 26px;
   margin: -12px -24px 4px;
   padding: 10px 24px 6px;
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.sheet-grab:active {
-  cursor: grabbing;
 }
 
 .sheet-grab .sheet-handle {
   margin-bottom: 0;
+}
+
+/* 可滚动内容区：不与下方整卡拖拽手势冲突 */
+.sheet-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .sheet-handle {
