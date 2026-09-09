@@ -11,6 +11,7 @@ interface MirrorStageProps {
   showHotspots: boolean
   onHotspotOpen: (hotspot: Hotspot) => void
   onReady: () => void
+  interactionActive: boolean
 }
 
 /**
@@ -23,6 +24,7 @@ export default function MirrorStage({
   showHotspots,
   onHotspotOpen,
   onReady,
+  interactionActive,
 }: MirrorStageProps) {
   const webgl = useMemo(() => hasWebGL(), [])
   const [failed, setFailed] = useState(false)
@@ -38,6 +40,7 @@ export default function MirrorStage({
               flipped={flipped}
               onReady={onReady}
               onError={() => setFailed(true)}
+              interactionActive={interactionActive}
             />
           ) : (
             <MirrorFlip mirror={mirror} flipped={flipped} onReady={onReady} />

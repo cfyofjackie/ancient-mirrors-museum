@@ -36,8 +36,9 @@ export default function InfoCard({ content, onClose }: InfoCardProps) {
             onClick={onClose}
           />
           <motion.div
-            className="sheet"
+            className={`sheet${content.isReference ? ' sheet-reference' : ''}`}
             role="dialog"
+            aria-modal="true"
             aria-label={content.title}
             initial={{ y: '100%', x: '-50%' }}
             animate={{ y: 0, x: '-50%' }}
@@ -48,31 +49,37 @@ export default function InfoCard({ content, onClose }: InfoCardProps) {
             <button type="button" className="sheet-x" onClick={onClose} aria-label="关闭">
               ×
             </button>
-            {content.imageUrl ? (
-              <figure className="ref-figure">
-                <img src={content.imageUrl} alt={content.imageAlt ?? content.title} />
-                <figcaption>{content.imageAlt ?? content.title}</figcaption>
-              </figure>
-            ) : (
-              content.isReference && (
-                <div className="ref-placeholder">
-                  <span>史料图片整理中 · 待补充</span>
-                </div>
-              )
-            )}
-            <h2 className="sheet-title">{content.title}</h2>
-            <p className="sheet-desc">{content.description}</p>
-            {content.source && (
-              <p className="sheet-source">
-                图片来源：{content.sourceUrl ? (
-                  <a href={content.sourceUrl} target="_blank" rel="noreferrer">
-                    {content.source}
-                  </a>
-                ) : (
-                  content.source
+            <div className="sheet-body">
+              {content.imageUrl ? (
+                <figure className="ref-figure">
+                  <div className="ref-image-frame">
+                    <img src={content.imageUrl} alt={content.imageAlt ?? content.title} />
+                  </div>
+                  <figcaption>{content.imageAlt ?? content.title}</figcaption>
+                </figure>
+              ) : (
+                content.isReference && (
+                  <div className="ref-placeholder">
+                    <span>史料图片整理中 · 待补充</span>
+                  </div>
+                )
+              )}
+              <div className="sheet-copy">
+                <h2 className="sheet-title">{content.title}</h2>
+                <p className="sheet-desc">{content.description}</p>
+                {content.source && (
+                  <p className="sheet-source">
+                    图片来源：{content.sourceUrl ? (
+                      <a href={content.sourceUrl} target="_blank" rel="noreferrer">
+                        {content.source}
+                      </a>
+                    ) : (
+                      content.source
+                    )}
+                  </p>
                 )}
-              </p>
-            )}
+              </div>
+            </div>
           </motion.div>
         </>
       )}

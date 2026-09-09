@@ -30,11 +30,12 @@
     status.textContent = 'Performance probe: waiting for textures and fonts…'
     document.body.append(status)
     await document.fonts.ready
-    await delay(3500)
+    const earlySwipe = variant === 'early-swipe'
+    await delay(earlySwipe ? 120 : 3500)
     // 序厅两页已并入翻页序列（index 0/1）：perf 用例先翻页进入主展厅（商镜）再开始计切换
     for (let i = 0; i < 3 && document.querySelector('.page')?.dataset.kind === 'opening'; i++) {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
-      await delay(2200)
+      await delay(earlySwipe ? 550 : 2200)
     }
     if (variant === 'no-grain') document.body.style.backgroundImage = 'none'
     if (variant === 'no-tint') document.querySelector('.bg-tint').style.display = 'none'
@@ -51,8 +52,17 @@
       requestAnimationFrame(frame)
     }
     requestAnimationFrame(frame)
-    await delay(1000)
+    await delay(earlySwipe ? 120 : 1000)
     const inputs = []
+    const pageChanges = []
+    const observedPage = document.querySelector('.page')
+    let lastObservedPage = observedPage.dataset.page
+    const pageObserver = new MutationObserver(() => {
+      if (observedPage.dataset.page === lastObservedPage) return
+      pageChanges.push({ from: lastObservedPage, to: observedPage.dataset.page, t: performance.now() })
+      lastObservedPage = observedPage.dataset.page
+    })
+    pageObserver.observe(observedPage, { attributes: true, attributeFilter: ['data-page'] })
     for (let i=0;i<8;i++) {
       status.textContent = `Performance probe ${variant}: switch ${i+1}/8`
       inputs.push(performance.now())
@@ -66,6 +76,7 @@
       } else window.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}))
       await delay(1100)
     }
+    pageObserver.disconnect()
     active = false
     const changes = []
     for(let i=1;i<samples.length;i++) {
@@ -74,9 +85,16 @@
     }
     const gaps = samples.slice(1).map((s,i)=>s.t-samples[i].t)
     const switchGaps = samples.slice(1).filter(s=>inputs.some(t=>s.t>=t && s.t<t+700)).map(s=>s.t-samples[samples.indexOf(s)-1].t)
-    const completedSwitches = changes.filter(c=>c.from.dynasty!==c.to.dynasty).length
+    const completedSwitches = pageChanges.length
     const teleport = changes.some(c=>c.oldContentVisible && (c.from.dynasty!==c.to.dynasty || Math.abs(c.jump)>innerHeight*.75))
-    const verdict = variant === 'short-flick' && completedSwitches === 0
+    const backgroundUploadsDuringInteraction = Object.entries(timings)
+      .filter(([name]) => /^upload:[12]:active$/.test(name))
+      .reduce((count, [, values]) => count + values.length, 0)
+    const verdict = backgroundUploadsDuringInteraction > 0
+      ? 'FAIL: background texture upload started during interaction'
+      : earlySwipe && completedSwitches >= 8 && document.querySelector('.page').dataset.phase === 'idle'
+      ? 'PASS: early navigation completed with background uploads paused'
+      : variant === 'short-flick' && completedSwitches === 0
       ? 'FAIL: all eight fast short swipes snapped back without switching'
       : completedSwitches < 8 ? 'INCONCLUSIVE: fewer than eight switches completed'
       : teleport ? 'FAIL: visible content teleports during page switch' : 'PASS: no visible content teleport'
@@ -85,8 +103,10 @@
       completedSwitches,
       frames:summarize(gaps),switchFrames:summarize(switchGaps),framesOver50ms:gaps.filter(n=>n>50).length,
       changes:changes.map(c=>({from:c.from.dynasty,to:c.to.dynasty,jump:c.jump,oldBottom:Math.round(c.from.bottom),oldContentVisible:c.oldContentVisible})),
+      pageChanges,
       timings:Object.fromEntries(Object.entries(timings).map(([k,v])=>[k,summarize(v.filter(s=>s.t>=start).map(s=>s.ms))])),
       idleRenders:(timings.render || []).filter(s=>s.t>=start && s.t<inputs[0]).length,
+      backgroundUploadsDuringInteraction,
       finalPhase:document.querySelector('.page').dataset.phase,
       longTasks:longTasks.filter(t=>t.t>=start),renderer:probe.rendererInfo,
       startup:{timings:Object.fromEntries(Object.entries(timings).map(([k,v])=>[k,summarize(v.filter(s=>s.t<start).map(s=>s.ms))])),longTasks:longTasks.filter(t=>t.t<start)},

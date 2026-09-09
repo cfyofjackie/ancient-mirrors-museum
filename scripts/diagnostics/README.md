@@ -15,6 +15,7 @@ node scripts/diagnostics/server.mjs
 - 当前生产构建：`http://127.0.0.1:6180/__production/?perf=fixed-mobile`
 - 当前生产构建，快速短滑：`http://127.0.0.1:6180/__production/?perf=short-flick`
 - 当前生产构建，长滑：`http://127.0.0.1:6180/__production/?perf=long-swipe`
+- 开页后立即连续翻页（验证后台纹理上传在交互中暂停）：`http://127.0.0.1:6180/?perf=early-swipe&dpr2`
 - 计时版（强制画布 DPR=2）：`http://127.0.0.1:6180/?perf=fixed-dpr2&dpr2`
 - 11 项交互回归：`http://127.0.0.1:6180/?interactions&dpr2`
 - 无 WebGL 回退：`http://127.0.0.1:6180/?interactions&fallback`

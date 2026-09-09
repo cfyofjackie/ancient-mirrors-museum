@@ -17,6 +17,11 @@ const swipe = async (dy, cancelled = false) => {
   pointer('pointermove',350+dy)
   pointer(cancelled ? 'pointercancel' : 'pointerup',350+dy)
 }
+const tap = async () => {
+  pointer('pointerdown',350)
+  await delay(40)
+  pointer('pointerup',350)
+}
 const settledAt = async name => { await until(()=>idle() && dynasty()===name, `Did not settle on ${name}; got ${dynasty()} / ${page().dataset.phase}`) }
 const results = []
 const status = document.createElement('pre')
@@ -83,11 +88,14 @@ try {
     await swipe(100); await settledAt('春秋')
   })
   await test('flip reverses and page switch resets to the decorated back', async () => {
-    pointer('pointerdown',350); pointer('pointerup',350)
-    await delay(750)
-    if(mirror().tagName==='CANVAS' && window.__mirrorProbe.rendererInfo) assert(Math.abs(window.__mirrorProbe.rendererInfo.flip-Math.PI)<.02,'Mirror did not flip')
-    else assert(getComputedStyle(document.querySelector('.mirror-flip')).transform!=='none','Fallback did not flip')
-    pointer('pointerdown',350); pointer('pointerup',350)
+    await tap()
+    assert(page().dataset.flipped === 'true', 'Tap did not update flipped state')
+    if(mirror().tagName==='CANVAS' && window.__mirrorProbe.rendererInfo) {
+      await until(() => Math.abs(window.__mirrorProbe.rendererInfo.flip-Math.PI)<.02, 'Mirror did not flip', 3000)
+    } else {
+      await until(() => getComputedStyle(document.querySelector('.mirror-flip')).transform!=='none', 'Fallback did not flip', 3000)
+    }
+    await tap()
     await delay(100)
     key(1); await settledAt('战国')
     await delay(750)
@@ -100,14 +108,14 @@ try {
     window.dispatchEvent(new WheelEvent('wheel',{deltaY:120,bubbles:true}))
     await delay(500)
     assert(dynasty()==='战国','Sheet scrolled the background page')
-    document.querySelector('.sheet-close').click()
+    document.querySelector('.sheet-x').click()
     await until(()=>!document.querySelector('.sheet'),'Reference sheet did not close')
   })
   await test('hotspots return after navigation and open their information card', async () => {
     await until(()=>document.querySelector('.hotspot'),'Hotspot did not return',5000)
     document.querySelector('.hotspot').click()
     await until(()=>document.querySelector('.sheet'),'Hotspot card did not open')
-    document.querySelector('.sheet-close').click()
+    document.querySelector('.sheet-x').click()
     await until(()=>!document.querySelector('.sheet'),'Hotspot card did not close')
   })
 } catch { /* Preserve the first failing scenario and its exact message. */ }

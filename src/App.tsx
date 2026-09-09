@@ -46,15 +46,13 @@ export default function App() {
 
   // waiting 放行：序厅页没有 3D 素材等待；商镜翻入展厅时早已就绪（无新 onReady）。
   // 其余镜间切换必须等新素材实际绘制后的 onReady（经 ready 回调）解除 waiting。
+  // 加载失败会由 MirrorStage 切到已解码的 CSS 图片或稳定的错误占位，再报告 ready；
+  // 不再用固定时间强行显现尚未绘制的 canvas。
   useEffect(() => {
     if (phase !== 'waiting') return
     if (!inHall || readyMirror.current === mirrorIndex) {
       ready(index)
-      return
     }
-    // 兜底：onReady 因纹理超时等原因未到达时，800ms 后强制放行，避免页面卡死在 waiting
-    const bailout = setTimeout(() => ready(index), 800)
-    return () => clearTimeout(bailout)
   }, [phase, index, inHall, mirrorIndex, ready])
 
   useEffect(() => {
@@ -95,37 +93,45 @@ export default function App() {
         data-phase={phase}
         data-kind={item.kind}
         data-page={index}
+        data-flipped={flipped}
         aria-busy={phase === 'waiting'}
       >
-        {/* 主展厅顶部展签块：朝代名（朱红）+ 镜名 + 简介两行，一组居中。
-            文字随 mirror 数据渲染（与下方 MirrorStage 同一 mirror 对象），朝代切换自动跟随。
-            pointer-events: none（触摸穿透到 window 级手势层）；仅主展厅显示，序厅有自己文字体系 */}
-        {inHall && (
-          <header className="hall-header">
-            <div className="dynasty-name">{mirror.dynasty}</div>
-            <div className="mirror-name">{mirror.name}</div>
-            <p className="mirror-desc">{mirror.shortDescription}</p>
-          </header>
-        )}
-
-        <MirrorStage
-          mirror={mirror}
-          flipped={flipped}
-          showHotspots={showHotspots}
-          onHotspotOpen={(hotspot) => setSheet({ type: 'hotspot', hotspot })}
-          onReady={onReady}
-        />
-
-        {/* 底部只留史实资料按钮 + 滑动提示（圆点指示器在 .page 之外固定于右缘） */}
-        <footer className={`app-footer${inHall ? ' text-enter' : ''}`}>
-          {mirror.reference && (
-            <button type="button" className="ref-entry" onClick={() => setSheet({ type: 'reference' })}>
-              史实资料
-            </button>
+        {/* 展厅采用稳定的展签 / 展品 / 控制三区。MirrorStage 始终挂载，保证序厅期间的
+            商镜预载与 3D 场景生命周期不变；仅由 CSS 在桌面和手机间调整布局。 */}
+        <div className="hall-layout">
+          {inHall && (
+            <header className="hall-header">
+              <div className="dynasty-name">{mirror.dynasty}</div>
+              <div className="mirror-name">{mirror.name}</div>
+              <p className="mirror-desc">{mirror.shortDescription}</p>
+            </header>
           )}
 
-          <p className="hint">上下滑动切换朝代 · 点击铜镜翻面</p>
-        </footer>
+          <MirrorStage
+            mirror={mirror}
+            flipped={flipped}
+            showHotspots={showHotspots}
+            onHotspotOpen={(hotspot) => setSheet({ type: 'hotspot', hotspot })}
+            onReady={onReady}
+            interactionActive={phase !== 'idle'}
+          />
+
+          <footer className={`app-footer${inHall ? ' text-enter' : ''}`}>
+            {mirror.reference && (
+              <button
+                type="button"
+                className="ref-entry"
+                aria-label="查看史实资料"
+                onClick={() => setSheet({ type: 'reference' })}
+              >
+                <span>史实</span>
+                <span>资料</span>
+              </button>
+            )}
+
+            <p className="hint">上下滑动切换朝代 · 点击铜镜翻面</p>
+          </footer>
+        </div>
 
         {/* 序厅两页：磨镜页 / 仕女页，纯 DOM，与铜镜共用同一位移容器 */}
         <OpeningPages
@@ -136,7 +142,7 @@ export default function App() {
 
       {/* 朝代指示器：固定于屏幕右缘垂直居中，不随拖拽/滑动位移；纯指示，不可点击。
           11 项：序厅两项（空心小点）+ 展厅九镜 */}
-      <div className="dynasty-dots" aria-hidden="true">
+      <div className={`dynasty-dots${inHall ? ' in-hall' : ''}`} aria-hidden="true">
         {SEQUENCE.map((entry, i) => (
           <span
             key={entry.kind === 'opening' ? `opening-${entry.page}` : `mirror-${entry.index}`}

@@ -70,34 +70,6 @@ body {
   padding: max(20px, env(safe-area-inset-top)) 24px max(20px, env(safe-area-inset-bottom));
 }
 
-/* 全屏手势+场景层（透明输入面）：触摸区域全屏，镜子经 padding 避让居中于文字空带 */
-.stage-gesture {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  /* 避开顶部标题与底部文字（视觉空带），触摸热区仍是全屏 */
-  padding: 96px 0 232px;
-  touch-action: none;
-  cursor: grab;
-}
-
-.stage-gesture:active {
-  cursor: grabbing;
-}
-
-/* 镜面空带：镜子在此带内居中，随视口自适应 */
-.scene-band {
-  flex: 1;
-  width: 100%;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 /* 朝代微染色层：垫在场景画布之下透出 */
 .bg-tint {
   position: absolute;
@@ -139,6 +111,19 @@ body {
   position: relative;
 }
 
+/* 展厅主构图：桌面为侧置展签 + 独立展品区，手机在媒体查询中折回纵向三段。
+   序厅期间该容器仍在下层维持 3D 生命周期，由 OpeningPages 完整覆盖。 */
+.hall-layout {
+  flex: 1;
+  min-height: 0;
+  width: min(100%, 1120px);
+  align-self: center;
+  display: grid;
+  grid-template-columns: minmax(250px, 0.72fr) minmax(440px, 1.35fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  column-gap: clamp(36px, 5vw, 76px);
+}
+
 .mirror-stage {
   /* 镜面画布区：flex:1 空带（上下文字之间），镜子恒在此带内居中，不与文字重叠 */
   position: relative;
@@ -151,25 +136,12 @@ body {
   /* 尺寸容器：镜面尺寸用 cqw/cqh 按空带实际宽高取比 */
   container-type: size;
   pointer-events: none;
+  grid-column: 2;
+  grid-row: 1 / span 2;
 }
 
 .mirror-stage canvas {
   pointer-events: auto;
-}
-
-/* 手势层：覆盖整个舞台（滑动/点击任意位置翻页），镜子居中于本层 */
-.stage-gesture {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  touch-action: none;
-  cursor: grab;
-}
-
-.stage-gesture:active {
-  cursor: grabbing;
 }
 
 /* AnimatePresence popLayout 模式下，退场元素会被取出文档流居中叠放 */
@@ -180,7 +152,7 @@ body {
   /* 镜子在空带内居中略偏下：margin-top 使 flex 居中点下移一半 margin。
      顶部展签块（朝代+镜名+简介）与底部按钮行把空带上下夹住后，空带本身已接近
      视觉均衡，仅留微量下偏；不改变空带高度，cqh 尺寸基准与镜子大小不变 */
-  margin-top: 3cqh;
+  margin-top: 0;
 }
 
 /* 3D 翻面（SLC 第三节 2）：perspective 提供纵深，preserve-3d 让两面共享翻转 */
@@ -198,8 +170,8 @@ body {
 .mirror-face {
   display: block;
   /* 铜镜占舞台约 76%（header 删除后空带更高，镜子相应上移放大），不超出舞台高度 */
-  width: min(76vw, 64vh, 560px);
-  width: min(76cqw, 76cqh, 560px);
+  width: min(78vw, 68vh, 560px);
+  width: min(78cqw, 78cqh, 560px);
   max-height: 100%;
   object-fit: contain;
   backface-visibility: hidden;
@@ -213,11 +185,49 @@ body {
   transform: rotateY(180deg);
 }
 
+/* WebGL 不可用时沿用同一组暖铜、打磨环纹和边缘氧化语汇。 */
+.mirror-front-fallback {
+  overflow: hidden;
+  border-radius: 50%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  filter: saturate(0.68) brightness(0.86) contrast(1.08) drop-shadow(0 24px 48px rgba(0, 0, 0, 0.45));
+}
+
+.mirror-front-fallback::after {
+  content: '';
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 42% 36%, rgba(224, 204, 159, 0.20), transparent 42%, rgba(37, 48, 37, 0.36) 100%),
+    repeating-radial-gradient(circle, transparent 0 8px, rgba(35, 31, 23, 0.13) 9px, rgba(231, 215, 179, 0.075) 10px, transparent 11px 15px),
+    repeating-linear-gradient(103deg, transparent 0 24px, rgba(235, 220, 186, 0.09) 25px, transparent 26px 41px);
+  mix-blend-mode: overlay;
+  box-shadow: inset 0 0 38px rgba(31, 40, 31, 0.35);
+  opacity: 0.88;
+  pointer-events: none;
+}
+
+.mirror-unavailable {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 50%;
+  background: #332f28;
+  color: rgba(229, 216, 190, 0.72);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-align: center;
+}
+
 /* 3D 铜镜容器：热点层与画布同框叠放 */
 .mirror-3d-wrap {
   position: relative;
   /* 76cqw/cqh（header 删除后空带变高，镜子放大居中于空带，以不侵入底部文字为准） */
-  width: min(76cqw, 76cqh, 560px);
+  width: min(78cqw, 78cqh, 560px);
   max-height: 100%;
   aspect-ratio: 1;
 }
@@ -298,82 +308,44 @@ body {
   }
 }
 
-/* ---- 史实资料入口（朱红实底胶囊 + 米白字 + 涟漪脉冲呼吸 + CSS 绘制"册"形小图标） ---- */
+/* ---- 史实资料入口：克制的方章形态，避免与展品争抢注意力 ---- */
 
 .ref-entry {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  border: 1px solid var(--accent); /* 同色边，抗锯齿 */
-  border-radius: 999px;
-  background: var(--accent); /* 朱红实底 */
-  color: #f0e8d8; /* 米白（接近 --ink） */
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border: 1px solid rgba(200, 64, 50, 0.72);
+  border-radius: 3px;
+  background: rgba(117, 39, 32, 0.18);
+  color: rgba(226, 117, 98, 0.92);
   font-family: var(--font-serif);
-  font-size: 13px;
-  letter-spacing: 0.2em;
-  /* 右侧多留 4px 抵消末字 letter-spacing 拖尾 */
-  padding: 8px 16px 8px 20px;
+  font-size: 12px;
+  line-height: 1.35;
+  letter-spacing: 0.14em;
+  padding: 0 0 0 0.14em;
   cursor: pointer;
-  transition: background-color 0.2s;
-  /* 涟漪脉冲呼吸：雷达式外扩光环，暗示可点击 */
-  animation: ref-entry-pulse 2.5s ease-out infinite;
-}
-
-@keyframes ref-entry-pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(181, 67, 47, 0.5);
-  }
-  100% {
-    box-shadow: 0 0 0 14px rgba(181, 67, 47, 0);
-  }
-}
-
-/* CSS 绘制小图标：方框轮廓内两道竖线，示意"册"（字体子集有限，不用生僻字符） */
-.ref-entry::before {
-  content: '';
-  flex: none;
-  width: 9px;
-  height: 11px;
-  border: 1px solid currentColor;
-  border-radius: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent 0 2px,
-    currentColor 2px 3px,
-    transparent 3px 4px,
-    currentColor 4px 5px,
-    transparent 5px
-  );
+  pointer-events: auto;
+  box-shadow: inset 0 0 0 2px rgba(200, 64, 50, 0.08);
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
 }
 
 .ref-entry:hover,
 .ref-entry:active {
-  background: #c14a35; /* 提亮一档 */
-  animation-play-state: paused; /* 悬停/按下时停住涟漪，观感更稳 */
+  background: rgba(143, 45, 36, 0.28);
+  border-color: rgba(214, 79, 62, 0.88);
+  color: rgba(239, 153, 136, 0.98);
 }
 
 .ref-entry:active {
-  transform: scale(0.96);
+  transform: scale(0.97);
 }
 
-/* 主展厅底部 .app-footer.text-enter > * 的入场动画（优先级更高）会整体覆盖 animation，
-   这里并列重申两个动画：入场（opacity/transform）与涟漪脉冲（box-shadow）属性不重叠，可共存 */
-.app-footer.text-enter .ref-entry {
-  animation: hall-text-in 0.6s ease both, ref-entry-pulse 2.5s ease-out infinite;
-}
-
-.app-footer.text-enter .ref-entry:hover,
-.app-footer.text-enter .ref-entry:active {
-  /* 双动画列表按序对应：入场继续播完，仅暂停涟漪脉冲 */
-  animation-play-state: running, paused;
-}
-
-/* 减少动态偏好：去掉呼吸光环，实底按钮本身已足够醒目（置于共存规则之后以胜出同优先级） */
-@media (prefers-reduced-motion: reduce) {
-  .ref-entry,
-  .app-footer.text-enter .ref-entry {
-    animation: none;
-  }
+.ref-entry:focus-visible {
+  outline: 2px solid rgba(233, 227, 212, 0.72);
+  outline-offset: 4px;
 }
 
 /* ---- 底部信息卡（热点说明 / 史实资料共用） ---- */
@@ -390,8 +362,8 @@ body {
   left: 50%;
   bottom: 0;
   /* 水平居中由 Framer Motion 的 x: '-50%' 合成（CSS transform 会被动画覆盖） */
-  width: min(100%, 480px);
-  max-height: 72dvh;
+  width: min(calc(100% - 32px), 540px);
+  max-height: min(78dvh, 720px);
   overflow-y: auto;
   /* 深色宣纸/墨迹质感：半透明基底 + 背景模糊 + 颗粒纹理叠层 + 淡金描边 */
   background:
@@ -403,9 +375,14 @@ body {
   border: 1px solid rgba(212, 175, 55, 0.18);
   border-bottom: none;
   border-radius: 16px 16px 0 0;
-  padding: 12px 22px calc(20px + env(safe-area-inset-bottom));
+  padding: 12px 24px calc(20px + env(safe-area-inset-bottom));
   z-index: 21;
   text-align: center;
+}
+
+.sheet-body,
+.sheet-copy {
+  min-width: 0;
 }
 
 .sheet-handle {
@@ -461,19 +438,42 @@ body {
 }
 
 .ref-figure {
-  margin: 0 0 14px;
+  margin: 0 0 16px;
+}
+
+.ref-image-frame {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(205, 181, 132, 0.2);
+  border-radius: 8px;
+  padding: 8px;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(111, 94, 66, 0.2), transparent 68%),
+    rgba(10, 13, 15, 0.68);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.28),
+    0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+.ref-image-frame::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 3px;
+  background: radial-gradient(ellipse at center, transparent 56%, rgba(12, 15, 17, 0.18) 82%, rgba(12, 15, 17, 0.48) 100%);
+  box-shadow: inset 0 0 0 1px rgba(229, 215, 184, 0.1);
+  pointer-events: none;
 }
 
 .ref-figure img {
+  display: block;
   width: 100%;
-  max-height: 32dvh;
-  object-fit: contain;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.25);
-  /* 白底文物图与深色面板融合：边缘径向渐隐 + 轻微降透明度，白框感消失 */
-  -webkit-mask-image: radial-gradient(ellipse 100% 100% at 50% 50%, #000 62%, transparent 96%);
-  mask-image: radial-gradient(ellipse 100% 100% at 50% 50%, #000 62%, transparent 96%);
-  opacity: 0.92;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 3px;
+  background: #171b1e;
+  filter: saturate(0.78) brightness(0.82) contrast(1.05) sepia(0.08);
 }
 
 .ref-figure figcaption {
@@ -661,14 +661,18 @@ body {
 .app-footer {
   /* 容器穿透触摸（页脚文字区也能滑动翻页）；交互子元素单独恢复 */
   pointer-events: none;
-  margin-top: auto; /* flex column 中推到底部 */
-  text-align: center;
+  grid-column: 1;
+  grid-row: 2;
+  align-self: end;
+  justify-self: start;
+  text-align: left;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 18px;
   position: relative;
   z-index: 2;
+  padding-bottom: 4px;
 }
 
 /* 主展厅文字（朝代/镜名/简介）：翻入展厅（text-enter 挂载）时淡入；
@@ -688,32 +692,23 @@ body {
   }
 }
 
-.ref-entry {
-  pointer-events: auto;
-}
-
-/* 留住退场动画期间的高度，避免底部信息跳动 */
-.footer-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
 /* 主展厅顶部展签块：朝代名（朱红）→ 镜名（米白、拉开字距）→ 简介两行，一组居中。
    触摸穿透（window 级手势监听不受影响，但独立 DOM 层也不拦截）；随 .page 整体位移。
    层级：与底部文字同层（z2），顶部保护渐变之下可读性已由渐变保证 */
 .hall-header {
-  flex: none;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  text-align: center;
+  align-items: flex-start;
+  gap: 8px;
+  text-align: left;
   pointer-events: none;
   position: relative;
   z-index: 2;
   /* 顶部安全区：.app 已含 max(20px, env(safe-area-inset-top))，此处仅加少量呼吸 */
-  margin-top: max(2px, env(safe-area-inset-top));
+  margin-top: 0;
 }
 
 .hall-header > * {
@@ -722,27 +717,27 @@ body {
 
 /* 简介两行并入展签块：与镜名拉开一档（其余字号/行距/颜色沿用 .mirror-desc 全局样式） */
 .hall-header .mirror-desc {
-  margin-top: 4px;
+  margin-top: 10px;
 }
 
 .dynasty-name {
-  font-size: clamp(40px, 11vw, 58px);
+  font-size: clamp(48px, 6vw, 72px);
   line-height: 1;
   font-weight: 700;
   color: #c84032;
 }
 
 .mirror-name {
-  margin-top: 8px;
-  font-size: clamp(16px, 4.2vw, 20px);
+  margin-top: 12px;
+  font-size: clamp(17px, 1.8vw, 22px);
   letter-spacing: 0.18em;
 }
 
 .mirror-desc {
-  font-size: clamp(13px, 3.4vw, 15px);
-  line-height: 1.8;
+  font-size: clamp(13px, 1.15vw, 15px);
+  line-height: 1.9;
   color: var(--ink-dim);
-  max-width: 30em;
+  max-width: 28em;
 }
 
 /* 朝代指示器：固定于屏幕右缘垂直居中，不随拖拽/滑动位移；纯指示，不可点击。
@@ -787,19 +782,203 @@ body {
   opacity: 1;
 }
 
+/* 展厅内将完整 11 项收成安静的页码刻度；序厅沿用原来的入场提示强度。 */
+.dynasty-dots.in-hall {
+  right: max(10px, env(safe-area-inset-right));
+  gap: 8px;
+  opacity: 0.58;
+}
+
+.dynasty-dots.in-hall span {
+  width: 8px;
+  background: rgba(233, 227, 212, 0.16);
+}
+
+.dynasty-dots.in-hall span.active {
+  width: 16px;
+  background: rgba(200, 64, 50, 0.72);
+  box-shadow: none;
+}
+
+.dynasty-dots.in-hall span.opening-dot {
+  width: 4px;
+  opacity: 0.35;
+}
+
 .hint {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 14px;
-  color: var(--ink-dim);
-  letter-spacing: 0.1em;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(233, 227, 212, 0.34);
+  letter-spacing: 0.08em;
+  max-width: 13em;
+  line-height: 1.7;
 }
 
 .hint::before,
 .hint::after {
   content: '';
-  width: 24px;
+  width: 12px;
   height: 1px;
-  background: var(--ink-faint);
+  background: rgba(233, 227, 212, 0.14);
+}
+
+/* 资料卡在宽屏上形成“实物图 + 文字”双区，热点说明仍保持紧凑单栏。 */
+@media (min-width: 760px) {
+  .sheet-reference {
+    width: min(calc(100% - 64px), 760px);
+    padding: 14px 30px 30px;
+  }
+
+  .sheet-reference .sheet-body {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.9fr) minmax(280px, 1.1fr);
+    align-items: center;
+    gap: 28px;
+    text-align: left;
+  }
+
+  .sheet-reference .ref-figure {
+    margin: 0;
+  }
+
+  .sheet-reference .sheet-title {
+    font-size: 20px;
+  }
+}
+
+/* 窄屏回到明确的展签 / 展品 / 控制三段，全部尺寸由动态视口内的可用空间决定。 */
+@media (max-width: 819px) {
+  .app {
+    padding:
+      max(16px, env(safe-area-inset-top))
+      max(22px, env(safe-area-inset-right))
+      max(14px, env(safe-area-inset-bottom))
+      max(22px, env(safe-area-inset-left));
+  }
+
+  .hall-layout {
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    row-gap: clamp(8px, 1.8dvh, 16px);
+  }
+
+  .hall-header {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .hall-header .mirror-desc {
+    margin-top: 4px;
+  }
+
+  .dynasty-name {
+    font-size: clamp(38px, 11vw, 50px);
+  }
+
+  .mirror-name {
+    margin-top: 5px;
+    font-size: clamp(16px, 4.4vw, 19px);
+  }
+
+  .mirror-desc {
+    font-size: clamp(12px, 3.45vw, 14px);
+    line-height: 1.7;
+    max-width: 29em;
+  }
+
+  .mirror-stage {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .mirror-face,
+  .mirror-3d-wrap {
+    width: min(88cqw, 76cqh, 440px);
+  }
+
+  .app-footer {
+    grid-column: 1;
+    grid-row: 3;
+    justify-self: center;
+    align-self: end;
+    flex-direction: column;
+    align-items: center;
+    gap: 9px;
+    padding-bottom: 0;
+    text-align: center;
+  }
+
+  .ref-entry {
+    width: 48px;
+    height: 48px;
+    font-size: 11px;
+  }
+
+  .hint {
+    max-width: none;
+    line-height: 1.4;
+  }
+
+  .dynasty-dots.in-hall {
+    right: max(7px, env(safe-area-inset-right));
+  }
+
+  .sheet {
+    width: 100%;
+    max-height: min(82dvh, 700px);
+    border-right: none;
+    border-left: none;
+    padding: 10px 22px calc(18px + env(safe-area-inset-bottom));
+  }
+
+  .ref-figure img {
+    aspect-ratio: 16 / 11;
+  }
+}
+
+/* 矮屏优先保住文字与控制，镜子从展品区的剩余高度中自然缩小。 */
+@media (max-width: 819px) and (max-height: 760px) {
+  .hall-layout {
+    row-gap: 6px;
+  }
+
+  .dynasty-name {
+    font-size: 34px;
+  }
+
+  .mirror-name {
+    margin-top: 2px;
+    font-size: 15px;
+  }
+
+  .mirror-desc {
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .mirror-face,
+  .mirror-3d-wrap {
+    width: min(84cqw, 72cqh, 390px);
+  }
+
+  .ref-entry {
+    width: 44px;
+    height: 44px;
+  }
+
+  .app-footer {
+    gap: 6px;
+  }
+
+  .hint {
+    font-size: 11px;
+  }
 }

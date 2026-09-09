@@ -21,6 +21,7 @@ type Props = {
   className?: string
   onReady?: () => void
   onError?: () => void
+  interactionActive?: boolean
 }
 
 /** 常驻场景；只有资源应用并绘制后才向页面报告就绪。 */
@@ -55,6 +56,7 @@ export default function Mirror3D(props: Props) {
   }, [art])
   useEffect(() => { scene.current?.setMode(mode) }, [mode])
   useEffect(() => { if (flipped !== undefined) scene.current?.setFlipped(flipped) }, [flipped])
+  useEffect(() => { scene.current?.setInteractionActive(!!props.interactionActive) }, [props.interactionActive])
   return <canvas ref={canvas} className={className} style={{ visibility: displayed === art ? 'visible' : 'hidden' }}
     onClick={() => { if (latest.current.flipped === undefined) scene.current?.toggle() }} />
 }

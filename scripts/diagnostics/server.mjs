@@ -9,7 +9,7 @@ const resultDir = path.join(root, 'scripts/diagnostics/results')
 const port = Number(process.env.DIAG_PORT) || 6180
 const server = await createServer({
   root,
-  server: { host: '127.0.0.1', port, strictPort: true },
+  server: { host: '127.0.0.1', port, strictPort: true, watch: { ignored: ['**/*.local/**'] } },
   plugins: [{
     name: 'local-performance-probe',
     enforce: 'pre',
@@ -19,7 +19,8 @@ const server = await createServer({
     transform(code, id) {
       if (!id.endsWith('/src/components/Mirror3D.tsx') && !id.endsWith('/src/rendering/mirrorScene.ts')) return
       code = code.replace('renderer.initTexture(t)', 'window.__mirrorProbe.measure("initTexture", () => renderer.initTexture(t))')
-      code = code.replace('const resource = await prepare(art)', 'if (new URLSearchParams(location.search).has("slow-art") && art.flat.includes("tang")) await new Promise(resolve => setTimeout(resolve, 800)); if (new URLSearchParams(location.search).has("fail-art") && art.flat.includes("tang")) throw new Error("Injected texture failure"); const resource = await prepare(art)')
+      code = code.replace('renderer.initTexture(task.texture)', 'window.__mirrorProbe.measure("initTexture", () => renderer.initTexture(task.texture)); window.__mirrorProbe.record("upload:" + (texturePriority.get(task.url) ?? 2) + ":" + (interactionActive ? "active" : "idle"), 0)')
+      code = code.replace('const resource = await prepare(art, 0)', 'if (new URLSearchParams(location.search).has("slow-art") && art.flat.includes("zhanguo")) await new Promise(resolve => setTimeout(resolve, 800)); if (new URLSearchParams(location.search).has("fail-art") && art.flat.includes("zhanguo")) throw new Error("Injected texture failure"); const resource = await prepare(art, 0)')
       code = code.replaceAll('renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))', "renderer.setPixelRatio(new URLSearchParams(location.search).has('dpr2') ? 2 : Math.min(window.devicePixelRatio, 2))")
       code = code.replace('renderer.render(scene, camera)', 'window.__mirrorProbe.measure("render", () => renderer.render(scene, camera)); window.__mirrorProbe.rendererInfo = { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, textures: renderer.info.memory.textures, programs: renderer.info.programs?.length, normalMap: !!mats.back.normalMap, discY: disc.position.y, flip: flip.value, flat: mats.back.map?.image?.src, canvas: [canvas.width, canvas.height] }')
       return code

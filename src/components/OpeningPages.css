@@ -21,6 +21,16 @@
   -webkit-user-select: none;
 }
 
+@media (max-width: 819px) {
+  .opening-layer {
+    /* 与窄屏 .app 的动态安全区内边距保持一致，避免序厅层过度外扩后再被裁切。 */
+    top: calc(-1 * max(16px, env(safe-area-inset-top)));
+    right: calc(-1 * max(22px, env(safe-area-inset-right)));
+    bottom: calc(-1 * max(14px, env(safe-area-inset-bottom)));
+    left: calc(-1 * max(22px, env(safe-area-inset-left)));
+  }
+}
+
 /* 非序厅页：整体隐藏（visibility 保留布局，测量槽位仍可用） */
 .opening-layer.is-hidden {
   visibility: hidden;
