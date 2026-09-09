@@ -57,7 +57,7 @@ docs/screenshots/  # README 展示图
 
 ## 素材与授权
 
-- **馆藏参考图**：来源与说明集中记录在 `assets/references/knowledge.md` 和 `src/data/mirrors.ts`
+- **馆藏参考图**：来源与说明集中记录在 `docs/knowledge.md` 和 `src/data/mirrors.ts`
 - **字体**：[霞鹜文楷（LXGW WenKai）](https://github.com/lxgw/LxgwWenkai)，SIL OFL 1.1，子集化后本地打包
 - **镜背主视觉**：九镜均使用本地颜色纹理和法线纹理；正面由静态程序纹理表现打磨古铜质感
 - **人物旧影**：依据同期文物、帛画、壁画、俑和肖像资料独立制作；考据与许可边界见 [九朝人物依据调研](docs/dynasty-reflection-sources-2026-09-09.md)

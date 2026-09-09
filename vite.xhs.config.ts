@@ -29,6 +29,7 @@ export default defineConfig({
     // 最低基线 Chrome 61/ES2017：esbuild 会把可选链、空值合并等 ES2020+ 语法降级，避免真机语法报错。
     target: 'es2017',
     // 经典脚本：不依赖 import/export，避免容器里"页面渲染出来但 JS 不执行"。
+    // iife 单 chunk 下 Vite 会把 CSS 内联进 JS、运行时注入 <style>（容器允许内联样式，可正常显示）。
     rollupOptions: {
       output: {
         format: 'iife',
