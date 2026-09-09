@@ -1198,6 +1198,26 @@ body {
   background: rgba(233, 227, 212, 0.14);
 }
 
+/* 呼吸＝「下一步该做什么」的提示牌：同一节奏轻轻点亮。
+   提示行在铜镜已唤醒状态呼吸；细看纹样按钮随状态呼吸；史实资料保持安静（不抢焦点）。 */
+@keyframes footer-breathe {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.hint.breathe {
+  animation: footer-breathe 2.8s ease-in-out infinite;
+}
+
+.reflection-entry {
+  animation: footer-breathe 2.8s ease-in-out infinite;
+}
+
 /* 资料卡在宽屏上形成“实物图 + 文字”双区，热点说明仍保持紧凑单栏。 */
 @media (min-width: 760px) {
   .sheet-reference {
@@ -1395,6 +1415,10 @@ body {
   }
 
   .flat-mirror span {
+    animation: none;
+  }
+  .hint.breathe,
+  .reflection-entry {
     animation: none;
   }
   .mirror-reflection,

@@ -180,7 +180,7 @@ export default function App() {
               )}
             </div>
 
-            <p className={`hint${flipped ? ' reflection-disclosure' : ''}`}>
+            <p className={`hint${flipped ? ' reflection-disclosure' : ''}${awake ? ' breathe' : ''}`}>
               {!awake
                 ? '轻触画中铜镜，让它从画卷中醒来'
                 : flipped && reflection
