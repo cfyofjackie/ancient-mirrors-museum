@@ -2,7 +2,10 @@ import { AnimatePresence, motion } from 'framer-motion'
 
 export interface SheetContent {
   title: string
-  description: string
+  /** 单段说明（无 sections 时渲染） */
+  description?: string
+  /** 结构化多段内容（优先于 description 渲染） */
+  sections?: { heading: string; body: string }[]
   /** 馆藏实物图（可选；无图时若 isReference 则显示占位块） */
   imageUrl?: string
   imageAlt?: string
@@ -58,7 +61,7 @@ export default function InfoCard({ content, onClose }: InfoCardProps) {
                   <figcaption>{content.imageAlt ?? content.title}</figcaption>
                 </figure>
               ) : (
-                content.isReference && (
+                content.isReference && !content.sections?.length && (
                   <div className="ref-placeholder">
                     <span>史料图片整理中 · 待补充</span>
                   </div>
@@ -66,7 +69,18 @@ export default function InfoCard({ content, onClose }: InfoCardProps) {
               )}
               <div className="sheet-copy">
                 <h2 className="sheet-title">{content.title}</h2>
-                <p className="sheet-desc">{content.description}</p>
+                {content.sections?.length ? (
+                  <div className="sheet-sections">
+                    {content.sections.map(sec => (
+                      <section key={sec.heading} className="sheet-section">
+                        <h3 className="sheet-section-heading">{sec.heading}</h3>
+                        <p className="sheet-desc">{sec.body}</p>
+                      </section>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="sheet-desc">{content.description}</p>
+                )}
                 {content.source && (
                   <p className="sheet-source">
                     图片来源：{content.sourceUrl ? (

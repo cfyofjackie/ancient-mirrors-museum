@@ -9,8 +9,9 @@ import usePageNavigation from './interaction/usePageNavigation'
 import { SEQUENCE } from './interaction/sequence'
 import { REFLECTIONS } from './data/reflections'
 import { TABLEAUX } from './data/tableaux'
+import { MUSEUM_INTRO } from './data/museumIntro'
 
-type Sheet = { type: 'hotspot'; hotspot: Hotspot } | { type: 'reference' } | null
+type Sheet = { type: 'hotspot'; hotspot: Hotspot } | { type: 'reference' } | { type: 'knowledge' } | null
 
 export default function App() {
   const [sheet, setSheet] = useState<Sheet>(null)
@@ -81,11 +82,19 @@ export default function App() {
     if (sheet.type === 'hotspot') {
       return { title: sheet.hotspot.title, description: sheet.hotspot.description }
     }
+    if (sheet.type === 'knowledge') {
+      return {
+        title: MUSEUM_INTRO.title,
+        sections: MUSEUM_INTRO.sections,
+        isReference: true,
+      }
+    }
     const ref = mirror.reference
     if (!ref) return null
     return {
       title: ref.title,
-      description: ref.detail,
+      description: ref.detail ?? '',
+      sections: ref.sections,
       imageUrl: ref.imageUrl,
       imageAlt: ref.imageAlt ?? `${mirror.name} 馆藏实物参考`,
       source: ref.source,
@@ -198,6 +207,19 @@ export default function App() {
           />
         ))}
       </div>
+
+      {/* 序厅期的「关于铜镜」入口：固定不随拖拽位移；按钮属于 interactive，不参与翻页手势 */}
+      {!inHall && (
+        <button
+          type="button"
+          className="opening-knowledge"
+          aria-label="关于铜镜"
+          onClick={() => setSheet({ type: 'knowledge' })}
+        >
+          <span>关于</span>
+          <span>铜镜</span>
+        </button>
+      )}
 
       {waiting && <p className="loading-notice" role="status">正在加载铜镜…</p>}
 
