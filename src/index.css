@@ -706,6 +706,29 @@ body {
   min-width: 0;
 }
 
+/* 顶部拖拽区：拖住把手向下拉即可关闭；touch-action:none 让浏览器不抢竖向滚动，
+   卡片内容仍可在下方自由滚动（dragListener=false 只从本区触发拖拽）。 */
+.sheet-grab {
+  display: block;
+  width: 100%;
+  min-height: 26px;
+  margin: -12px -24px 4px;
+  padding: 10px 24px 6px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sheet-grab:active {
+  cursor: grabbing;
+}
+
+.sheet-grab .sheet-handle {
+  margin-bottom: 0;
+}
+
 .sheet-handle {
   width: 36px;
   height: 4px;

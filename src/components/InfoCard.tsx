@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useDragControls, type PanInfo } from 'framer-motion'
 
 export interface SheetContent {
   title: string
@@ -26,6 +26,13 @@ interface InfoCardProps {
  * 同时承载热点说明与史实资料两类内容。
  */
 export default function InfoCard({ content, onClose }: InfoCardProps) {
+  const dragControls = useDragControls()
+
+  // 顶部把手下拉关闭：拖过阈值或速度足够即关闭，否则回弹到原位。
+  const handleDragEnd = (_: unknown, info: PanInfo) => {
+    if (info.offset.y > 70 || info.velocity.y > 600) onClose()
+  }
+
   return (
     <AnimatePresence>
       {content && (
@@ -47,8 +54,16 @@ export default function InfoCard({ content, onClose }: InfoCardProps) {
             animate={{ y: 0, x: '-50%' }}
             exit={{ y: '100%', x: '-50%' }}
             transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
+            drag="y"
+            dragListener={false}
+            dragControls={dragControls}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.6 }}
+            onDragEnd={handleDragEnd}
           >
-            <div className="sheet-handle" />
+            <div className="sheet-grab" onPointerDown={(e) => dragControls.start(e)} aria-hidden="true">
+              <div className="sheet-handle" />
+            </div>
             <button type="button" className="sheet-x" onClick={onClose} aria-label="关闭">
               ×
             </button>
