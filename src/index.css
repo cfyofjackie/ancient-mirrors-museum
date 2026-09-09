@@ -1183,9 +1183,9 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
-  color: rgba(233, 227, 212, 0.34);
-  letter-spacing: 0.08em;
+  font-size: 14px;
+  color: rgba(233, 227, 212, 0.52);
+  letter-spacing: 0.06em;
   max-width: 13em;
   line-height: 1.7;
 }
@@ -1384,7 +1384,7 @@ body {
   }
 
   .hint {
-    font-size: 11px;
+    font-size: 13px;
   }
 }
 
