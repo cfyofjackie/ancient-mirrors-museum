@@ -1,14 +1,33 @@
-# 交接：小红书容器内滑动卡顿排查（未解决，待接手）
+# 交接：小红书容器内滑动卡顿排查（2026-09-10 结案：接受为已知边界）
 
-> 面向接手者（Codex）。本文只记录**已实测的事实**与**已排除项**，结论未定，请不要凭直觉直接改视觉/素材。
+> 面向接手者。本文记录**已实测的事实**、**已排除项**与**结案结论**，避免重复投入。
 > 相关历史：`HANDOFF.md`（项目现状与红线）、`.skill/minitool-zip-builder/`（小红书官方打包规范）。
 
-## 0. 一句话现状
+## 0. 结案结论
 
-小红书小工具容器内（WebView）**手指滑动仍有明显卡顿**，尤其在**进馆、3D 铜镜加载之后**；**Firefox 手机端不卡**。
-已用三轮屏幕探针 + 四段真机录屏定位，**排除了 GPU 负载、软件渲染、显存、纹理上传、3D 就绪等待**等假设，并修掉了一个**已证实的成因（换页时画卷大图解码阻塞主线程）**，但**主观卡顿仍存在**。
+**小红书容器内（Chromium 系 WebView）滑动仍残留轻微卡顿，判定为 Chromium 触摸/合成/产帧路径的固有代价；本项目选择接受，不再继续投入。**
+依据：三轮屏幕探针 + 四段真机录屏 + **两轮单变量 A/B**（5 个 URL 开关对照；Codex 的"隐藏 canvas + 二维代理"方案）都无法在不牺牲交互语义与观感的前提下消除它。**同一份代码在 Firefox 手机端顺滑**，说明问题不在业务 JS，而在浏览器内核差异。
 
-### 2026-09-10 Codex 第一轮 Chromium 合成 A/B（待真机验证）
+### 已实修（**不要回退**）
+
+1. **换页时"画卷大图"解码阻塞主线程**——实测最坏 `tab=103ms` 且伴随 60ms longtask。新增 `src/interaction/tableauWarmup.ts`：落定后在空闲时预解码上一/下一镜的画卷图。修后 `tab` 103→0、翻页窗口内 longtask 消失、fps 回到 112–121。
+2. **黑屏**——经典脚本在 `<head>` 无 `defer` 会在 `#root` 解析前执行导致 `createRoot(null)`；已加 `defer`（`vite.xhs.config.ts`），并加旧内核缺省 polyfill 与可视错误上报。
+3. **WebGL DPR 2 → 1.5**（贴合官方性能预算）。
+4. **xhs 合规构建**：经典脚本/ES2017/去内联、正斜杠打包、无 `.md`、zip 8.35 MiB 且审计 PASS（`scripts/compress-xhs-assets.mjs`、`scripts/package-xhs-zip.py`）。
+5. **3D 失败回退不再露占位铜镜**——`mirrors/*/front.webp` 九张全是早期 `make-placeholders.mjs` 的占位图、`back.webp` 里汉/明/宋/唐四张也是占位，而 CSS 回退恰好用它们。现改为：镜背优先用真彩图 `art3d.flat` 并按镜形裁切、镜面纯 CSS 渐变；删除无用的 `frontImage` 与 9 张占位 `front.webp`。
+6. Codex：`.page` 不再对"含透明 WebGL canvas 的祖先"动画 `opacity`（改用独立纯色 `.page-transition-mask`）；`pointermove` 用 `requestAnimationFrame` 合并，同一帧只提交最后一个手指位置。
+
+### 已排除（都有实测数据，**别再重走**）
+
+软件渲染（GPU 是 Adreno 740 硬件）· GPU 负载与显存（`calls=3 / tri=512`）· 纹理上传（`up=0`）· 3D 就绪等待（`wait=2ms`）· 沉睡药丸的 `backdrop-filter` · WebGL DPR 高低 · **整页 opacity 动画**（`?nofade`）· **canvas 单独合成层**（`?canvaslayer`）· **`.page` 的 `will-change`**（`?nolayer`）· **拖拽期间隐藏 canvas + 二维代理**（Codex 真机实测：仍卡且交互出现静帧，**禁止恢复**）。
+
+### 若将来仍要再查，唯一还没做过的测量
+
+**拖拽过程本身从未插桩**——现有探针只覆盖"松手后的翻页过渡"，而用户体感来自"手指按住下滑"。若重启排查，先补 `pointerdown→pointerup` 窗口内的每帧跟随延迟与 `long-animation-frame`（LoAF）归因；若仍无解，考虑把 JS 驱动的位移换成**原生滚动容器 + `scroll-snap`**（让合成器接管拖拽）——工程量大、风险中高，本轮评估后未做。
+
+---
+
+### 2026-09-10 Codex 第一轮 Chromium 合成 A/B（已真机验证：无改善）
 
 用户补充：同一手机上 Firefox 顺滑，而 Chrome 与小红书容器均卡；这进一步把范围收敛到 Chromium 的触摸/合成路径。当前工作区已做两项低风险调整：
 
@@ -18,6 +37,8 @@
 桌面 Chrome 已通过 11 项交互回归和八轮“内容不可见时交换”判定；网站版与 xhs 版构建通过，测试包审计通过（8.49 MiB）。这只能证明功能约束未回归，**不能证明手机 Chromium 卡顿已经解决**。下一判定点：用该包在 Chrome/小红书中分别测试“唤醒前、唤醒后下滑”。若无明显改善，下一步直接做“拖拽期间二维代理图、WebGL canvas 不参与移动”的单变量 A/B。
 
 后续已实测并回退“滑动期间隐藏 canvas、镜背/镜面改用二维代理”方案：真机仍然卡顿，同时点击唤醒、翻面和滑动之间出现明显静帧切换，交互语义与观感变差。该反证说明“移动 live canvas”不是完整解释，后续不要恢复此方案。
+
+> **2026-09-10 结案补充**：上述两项改动 + 另外 5 个对照开关（`?nofade` / `?canvaslayer` / `?nolayer` / `?dpr1` / `?noprobe`）已在真机逐项实测，**主观仍卡**；相关探针与开关已从代码中移除。以 §0 结案结论为准。
 
 ---
 
@@ -96,7 +117,7 @@ LT(最近4)=98ms 56ms 61ms 50ms   ← 这些落在"翻页之间"，未落在翻�
 | `3037918` | xhs 合规构建（经典脚本/ES2017/DPR1.5） | 通过平台校验 |
 | `27161f5` | **画卷图空闲预热**：落定后空闲时提前解码上一/下一镜全屏画卷（`src/interaction/tableauWarmup.ts`） | **`tab` 103→0、翻页窗口内 `LT` 消失、fps 回到 112–121**；**但用户主观仍觉卡** |
 
-## 6. 剩余假设与建议的下一步（按优先级）
+## 6. 结案前的假设清单（**已被 §0 覆盖，仅作记录**）
 
 1. **拖拽阶段没有插桩（最该先做）**——用户说的是"手指往下滑"那一下。现有探针只覆盖"松手后的过渡"。
    建议：在 `src/interaction/usePageNavigation.ts` 的 `pointerdown→pointerup` 之间加：每帧 `y` 跟随延迟、`pointermove` 处理耗时、以及该窗口内的 `longtask`/`long-animation-frame`。**没有这段数据，无法确认卡在拖拽还是过渡。**
@@ -125,9 +146,10 @@ node ".skill/minitool-zip-builder/minitool-zip-builder/scripts/audit_artifact.mj
 npm run build && npm run deploy      # 发到 gh-pages
 ```
 
-### 7.3 探针（当前代码里已内置，屏幕左上角 HUD）
-- 读法：`wait`=等新镜就绪；`art(prep)`=`applyArt`(等纹理)；`tab`=画卷图解码；`up`=纹理上传；`LT[偏移/时长]`=该次翻页窗口内的长任务。
+### 7.3 探针（**已从代码中移除**，方法保留备将来重查）
+- 曾内置的屏幕 HUD 读法：`wait`=等新镜就绪；`art(prep)`=`applyArt`(等纹理)；`tab`=画卷图解码；`up`=纹理上传；`LT[偏移/时长]`=该次翻页窗口内的长任务。
 - 截图判读：`tab` 大 + `LT` 非 `-` → 解码阻塞；`wait`/`prep` 大 → 3D 侧；全小但 `worst2s` 大 → 合成/渲染侧。
+- 结案后 `src/probe.ts` / `src/perf.ts` / `src/flags.ts` 与各文件打点已全部删除；如需重查，按本节字段名重做即可。
 
 ### 7.4 真机录屏分析
 ```powershell
@@ -139,14 +161,9 @@ ffmpeg -i lagging\N.mp4 -vf "freezedetect=n=-60dB:d=0.12" -an -f null -  # 找�
 ## 8. 当前代码状态（接手前必读）
 
 - **已提交、已推 `origin/main`**（`main...origin/main` 同步）。
-- **未跟踪**：`lagging/`（四段录屏 + 抽帧）、`design/`（logo/图标，勿进包）。
-- **临时代码（诊断完请删除）**：
-  - `src/probe.ts`（HUD 全量）、`src/perf.ts`（打点 + `observeLongTasks`）
-  - `src/main.tsx`：`import { startProbe }` + `startProbe()`（第 7、54 行）
-  - `src/interaction/usePageNavigation.ts`：`perf.mark('swipe'|'commit'|'settle')` + `perf.finish()`
-  - `src/App.tsx`：`perf.mark('ready')`、画卷解码计时 effect、`tableauImgRef`
-  - `src/rendering/mirrorScene.ts`：`perf.mark('artStart'|'artPrep'|'artApplied')`、`perf.upload()`、`window.__mirrorSceneInfo`（含 dispose 清理）
-- **保留的正式修复**（不要回退）：`defer` 入口脚本、polyfill、DPR 1.5、xhs 合规构建、`src/interaction/tableauWarmup.ts` 画卷预热。
+- **未跟踪/已忽略**：`lagging/`（四段录屏 + 抽帧，已 gitignore）、`design/branding/`（logo/图标，已移出仓库、只留本地）。
+- **临时诊断代码已全部移除**（`src/probe.ts`、`src/perf.ts`、`src/flags.ts` 及 `main.tsx` / `usePageNavigation.ts` / `App.tsx` / `mirrorScene.ts` / `MirrorStage.tsx` / `index.css` 内的打点与开关）。若要重查，按 §7.3 重做。
+- **保留的正式修复（不要回退）**：`defer` 入口脚本、polyfill 与可视错误上报、WebGL DPR 1.5、xhs 合规构建与打包脚本、`src/interaction/tableauWarmup.ts` 画卷预热、`MirrorFlip` 用真彩图回退（不再露占位图）、Codex 的 `.page-transition-mask` 与 `pointermove` rAF 合并。
 
 ## 9. 红线（改任何东西前先确认不破）
 
@@ -174,5 +191,5 @@ ffmpeg -i lagging\N.mp4 -vf "freezedetect=n=-60dB:d=0.12" -an -f null -  # 找�
 
 ## 11. 一句话给接手者
 
-**"3D 加载后就卡、Firefox 不卡"目前最可能落在两处：① 拖拽阶段的逐帧位移被主线程长任务打断（尚未插桩）；② 过渡时含 WebGL canvas 的 `.page` 做透明度动画导致的 Chromium 合成代价（主线程探针看不到）。**
-请先补 §6-1 的拖拽插桩与 §6-2 的 LoAF 归因，并做 §6-3 的"去 opacity 动画"A/B 对照，再决定改法。
+**本案已结案**：残留卡顿判定为 Chromium 系 WebView 的合成/产帧固有代价，本项目接受（同代码 Firefox 顺滑）。已修的真实成因见 §0；已排除项请勿重走。
+若将来仍要深挖，唯一还没做过的测量是**拖拽过程本身**（`pointerdown→pointerup` 的每帧跟随 + LoAF 归因），以及可选的**原生滚动容器 + `scroll-snap` 重构**（工程量大、风险中高，本轮评估后未做）。

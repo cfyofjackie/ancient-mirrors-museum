@@ -6,7 +6,6 @@ import type { ReflectionProfile } from '../data/reflections'
 import Mirror3D, { hasWebGL } from './Mirror3D'
 import MirrorFlip from './MirrorFlip'
 import HotspotComponent from './Hotspot'
-import { flags } from '../flags' // 临时诊断开关（?flip 强制 CSS 回退）
 
 interface MirrorStageProps {
   mirror: Mirror
@@ -40,7 +39,7 @@ export default function MirrorStage({
   const webgl = useMemo(() => hasWebGL(), [])
   const [failed, setFailed] = useState(false)
   const [loadedReflection, setLoadedReflection] = useState<string | null>(null)
-  const use3D = webgl && !failed && !!mirror.art3d && !flags.flip
+  const use3D = webgl && !failed && !!mirror.art3d
 
   return (
     <div className="mirror-stage">

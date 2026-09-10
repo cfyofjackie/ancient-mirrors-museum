@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { animate, useMotionValue, useReducedMotion } from 'framer-motion'
-import { perf } from '../perf' // 临时诊断（与 src/probe.ts 配套）
-import { flags } from '../flags' // 临时诊断开关
 
 type Direction = 1 | -1
 type Phase = 'idle' | 'dragging' | 'exiting' | 'waiting' | 'entering'
@@ -62,11 +60,7 @@ export default function usePageNavigation(options: Options) {
   }, [opacity, y, reduced, stop])
   const settle = useCallback(() => {
     changePhase('entering')
-    tween(0, 1, 0.28, () => {
-      perf.mark('settle')
-      perf.finish()
-      finish()
-    })
+    tween(0, 1, 0.28, finish)
   }, [changePhase, tween, finish])
 
   const go = useCallback((delta: Direction) => {
@@ -76,19 +70,16 @@ export default function usePageNavigation(options: Options) {
       return
     }
     changePhase('exiting')
-    perf.mark('swipe')
     const distance = reduced ? 0 : Math.min(240, window.innerHeight * 0.24)
     // 从当前拖动位置继续，不把已经拖远的页面拉回。
     const out = -delta * Math.max(distance, Math.abs(y.get()) + 36)
-    // 诊断开关 ?nofade：翻页只位移、不做整页淡出淡入（验证 opacity 动画在含 canvas 的页上的合成代价）
-    tween(out, flags.nofade ? 1 : 0, 0.16, () => {
-      if (!flags.nofade) opacity.jump(0)
+    tween(out, 0, 0.16, () => {
+      opacity.jump(0)
       y.jump(reduced ? 0 : delta * Math.min(160, window.innerHeight * 0.18))
       changePhase('waiting')
       current.current = (current.current + delta + latest.current.count) % latest.current.count
       latest.current.onCommit()
       setIndex(current.current)
-      perf.mark('commit')
     })
   }, [changePhase, opacity, reduced, tween, y])
   run.current = go

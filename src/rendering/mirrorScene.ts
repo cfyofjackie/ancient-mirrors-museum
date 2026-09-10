@@ -3,8 +3,6 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import mirrors from '../data/mirrors'
 import type { Art3D, Shape3D } from '../data/mirrors'
 import type { ReflectionProfile } from '../data/reflections'
-import { perf } from '../perf' // 临时诊断（与 src/probe.ts 配套）
-import { flags } from '../flags' // 临时诊断开关
 
 const R = 1.22
 const MIRROR_Y = 0
@@ -200,7 +198,7 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
   const scene = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 50)
   camera.position.set(0, 0, 4.35)
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, flags.dpr1 ? 1 : 1.5))
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
   renderer.toneMapping = THREE.ACESFilmicToneMapping
   renderer.toneMappingExposure = 0.95
   const pmrem = new THREE.PMREMGenerator(renderer)
@@ -245,9 +243,7 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
     uploadTasks.delete(task.url)
     try {
       assertAlive()
-      const t0 = performance.now()
       renderer.initTexture(task.texture)
-      perf.upload(performance.now() - t0) // 临时诊断：记录 GPU 上传耗时
       task.resolve(task.texture)
     } catch (error) {
       textures.delete(task.texture)
@@ -456,10 +452,8 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
   }
   const applyArt = async (art: Art3D) => {
     const gen = ++artGeneration
-    perf.mark('artStart')
     // 用户正在等待的镜永远提升为最高优先级，即使它已经由后台预热开始加载。
     const resource = await prepare(art, 0)
-    perf.mark('artPrep')
     if (disposed || gen !== artGeneration) return false
     const firstMaps = !mats.back.map || !mats.back.normalMap
     tex.flat = resource.flat
@@ -478,7 +472,6 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
     if (raf) cancelAnimationFrame(raf)
     tick()
     warmupAround(art)
-    perf.mark('artApplied')
     return true
   }
   const setMode = (next: Mode) => {
@@ -532,7 +525,7 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
     const width = canvas.clientWidth
     const height = canvas.clientHeight
     if (!width || !height) return
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, flags.dpr1 ? 1 : 1.5))
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
     renderer.setSize(width, height, false)
     camera.aspect = width / height
     camera.updateProjectionMatrix()
@@ -560,18 +553,6 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
   document.addEventListener('pointerleave', onLeave)
   document.addEventListener('visibilitychange', visibility)
   canvas.addEventListener('webglcontextlost', contextLost)
-
-  // —— 临时诊断探针：暴露 renderer 的显存/绘制统计供 HUD 读取（诊断完成后连同 src/probe.ts 一起删除）——
-  ;(window as unknown as { __mirrorSceneInfo?: () => Record<string, unknown> }).__mirrorSceneInfo = () => ({
-    textures: renderer.info.memory.textures,
-    geometries: renderer.info.memory.geometries,
-    programs: renderer.info.programs?.length ?? 0,
-    calls: renderer.info.render.calls,
-    triangles: renderer.info.render.triangles,
-    dpr: renderer.getPixelRatio(),
-    canvasW: canvas.width,
-    canvasH: canvas.height,
-  })
 
   return {
     applyArt, setFlipped, setMode, setReflection,
@@ -614,8 +595,6 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
       environment.dispose()
       pmrem.dispose()
       renderer.dispose()
-      // 临时诊断探针：卸载时清掉全局钩子
-      ;(window as unknown as { __mirrorSceneInfo?: unknown }).__mirrorSceneInfo = undefined
       // StrictMode 会在同一个仍连接的 canvas 上执行一次清理再挂载。
       // 此时不能主动丢失上下文，否则第二次挂载会收到延迟的 contextlost。
       if (!canvas.isConnected) renderer.forceContextLoss()

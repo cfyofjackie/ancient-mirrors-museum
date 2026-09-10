@@ -11,7 +11,6 @@ import { warmTableaux, pauseTableauWarmup } from './interaction/tableauWarmup'
 import { REFLECTIONS } from './data/reflections'
 import { TABLEAUX } from './data/tableaux'
 import { MUSEUM_INTRO } from './data/museumIntro'
-import { perf } from './perf' // 临时诊断（与 src/probe.ts 配套）
 
 type Sheet = { type: 'hotspot'; hotspot: Hotspot } | { type: 'reference' } | { type: 'knowledge' } | null
 
@@ -59,21 +58,8 @@ export default function App() {
   const tableau = TABLEAUX[mirror.id]
   const onReady = useCallback(() => {
     readyMirror.current = mirrorIndex
-    perf.mark('ready') // 临时诊断：新镜实际就绪时刻
     ready(index)
   }, [ready, index, mirrorIndex])
-
-  // 临时诊断：量一下新画卷图的解码耗时（换页是否卡在大图解码上）
-  const tableauImgRef = useRef<HTMLImageElement>(null)
-  useEffect(() => {
-    const img = tableauImgRef.current
-    if (!img || !tableau) return
-    const t0 = performance.now()
-    const done = () => perf.tableau(performance.now() - t0)
-    if (img.complete && img.naturalWidth) done()
-    else if (typeof img.decode === 'function') img.decode().then(done, done)
-    else img.addEventListener('load', done, { once: true })
-  }, [tableau, mirror.id, index])
 
   // 画卷图预热：落定空闲时提前解码上一/下一镜的全屏画卷大图（视觉零影响），
   // 使常规上/下滑命中已解码缓存，避免翻页瞬间现解码（实测最坏 ~100ms）阻塞主线程造成卡顿。
@@ -165,7 +151,7 @@ export default function App() {
           <div className="tableau-backdrop" aria-hidden="true">
             <picture>
               <source media="(max-width: 819px)" srcSet={tableau.mobile} />
-              <img ref={tableauImgRef} src={tableau.desktop} alt="" draggable={false} />
+              <img src={tableau.desktop} alt="" draggable={false} />
             </picture>
           </div>
         )}
