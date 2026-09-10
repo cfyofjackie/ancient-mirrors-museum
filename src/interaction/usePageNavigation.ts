@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { animate, useMotionValue, useReducedMotion } from 'framer-motion'
 import { perf } from '../perf' // 临时诊断（与 src/probe.ts 配套）
+import { flags } from '../flags' // 临时诊断开关
 
 type Direction = 1 | -1
 type Phase = 'idle' | 'dragging' | 'exiting' | 'waiting' | 'entering'
@@ -79,8 +80,9 @@ export default function usePageNavigation(options: Options) {
     const distance = reduced ? 0 : Math.min(240, window.innerHeight * 0.24)
     // 从当前拖动位置继续，不把已经拖远的页面拉回。
     const out = -delta * Math.max(distance, Math.abs(y.get()) + 36)
-    tween(out, 0, 0.16, () => {
-      opacity.jump(0)
+    // 诊断开关 ?nofade：翻页只位移、不做整页淡出淡入（验证 opacity 动画在含 canvas 的页上的合成代价）
+    tween(out, flags.nofade ? 1 : 0, 0.16, () => {
+      if (!flags.nofade) opacity.jump(0)
       y.jump(reduced ? 0 : delta * Math.min(160, window.innerHeight * 0.18))
       changePhase('waiting')
       current.current = (current.current + delta + latest.current.count) % latest.current.count
@@ -98,6 +100,14 @@ export default function usePageNavigation(options: Options) {
 
   useEffect(() => {
     let pointer: { id: number; x: number; y: number; offset: number; maxDistance: number; tap: boolean; deferred: boolean; samples: Array<{y: number; t: number}> } | null = null
+    let moveRaf = 0
+    let pendingY: number | null = null
+    const flushMove = () => {
+      if (moveRaf) cancelAnimationFrame(moveRaf)
+      moveRaf = 0
+      if (pendingY != null) y.set(pendingY)
+      pendingY = null
+    }
     const target = (event: Event) => event.target instanceof Element ? event.target : null
     const down = (event: PointerEvent) => {
       if (pointer || event.button !== 0 || event.isPrimary === false || latest.current.blocked || target(event)?.closest(interactive)) return
@@ -108,6 +118,7 @@ export default function usePageNavigation(options: Options) {
       queued.current = null
       pointer = { id: event.pointerId, x: event.clientX, y: event.clientY, offset: y.get(), maxDistance: 0,
         deferred, tap: canTapMirror && !!target(event)?.closest('.mirror-3d-wrap'), samples: [{ y: event.clientY, t: event.timeStamp }] }
+      pendingY = null
       if (!deferred) {
         controls.current = [animate(opacity, 1, { duration: 0.12 })]
         changePhase('dragging')
@@ -122,11 +133,20 @@ export default function usePageNavigation(options: Options) {
     const move = (event: PointerEvent) => {
       if (!pointer || event.pointerId !== pointer.id) return
       sample(event)
-      if (!pointer.deferred) y.set(pointer.offset + event.clientY - pointer.y)
+      if (pointer.deferred) return
+      // Chromium 在高刷新率触屏上可能在同一帧投递多次 pointermove。只提交每帧最后一个
+      // 位置，避免 Framer Motion 反复更新包含 WebGL canvas 的合成层。
+      pendingY = pointer.offset + event.clientY - pointer.y
+      if (!moveRaf) moveRaf = requestAnimationFrame(() => {
+        moveRaf = 0
+        if (pendingY != null) y.set(pendingY)
+        pendingY = null
+      })
     }
     const up = (event: PointerEvent) => {
       if (!pointer || event.pointerId !== pointer.id) return
       sample(event)
+      flushMove()
       const gesture = pointer
       pointer = null
       const dy = event.clientY - gesture.y
@@ -148,6 +168,7 @@ export default function usePageNavigation(options: Options) {
       if (!pointer || (event && event.pointerId !== pointer.id)) return
       const deferred = pointer.deferred
       pointer = null
+      flushMove()
       queued.current = null
       if (!deferred) settle()
     }
@@ -188,6 +209,7 @@ export default function usePageNavigation(options: Options) {
       window.removeEventListener('blur', blur)
       window.removeEventListener('wheel', wheel)
       window.removeEventListener('keydown', key)
+      flushMove()
       stop()
     }
   }, [changePhase, go, opacity, settle, stop, y])

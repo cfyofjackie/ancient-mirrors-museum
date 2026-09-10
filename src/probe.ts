@@ -10,6 +10,7 @@
  *（以及 mirrorScene.ts 里的 __mirrorSceneInfo 挂载）。
  */
 import { perf, observeLongTasks } from './perf'
+import { activeFlags } from './flags'
 
 export function startProbe() {
   observeLongTasks() // 订阅主线程长任务（第三版新增）
@@ -75,6 +76,7 @@ export function startProbe() {
     const info = (window as unknown as { __mirrorSceneInfo?: () => Record<string, unknown> }).__mirrorSceneInfo?.()
     el.textContent =
       'PROBE 临时诊断\n' +
+      `开关: ${activeFlags.length ? activeFlags.join(',') : '(无)'}\n` +
       `GPU: ${gpu}\n` +
       `vendor: ${vendor}\n` +
       `${software ? '⚠ 软件渲染 SOFTWARE' : '硬件 GPU（非软件）'}\n` +

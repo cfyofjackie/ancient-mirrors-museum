@@ -296,6 +296,16 @@ body {
   /* 不加 drop-shadow：移动端每帧重算阴影是显著性能负载，暗色墙面已能衬出轮廓 */
 }
 
+/* —— 临时诊断开关（?canvaslayer / ?nolayer）：对照 Chromium 的合成路径，定位后删除 —— */
+.flag-canvaslayer .mirror-3d-wrap canvas {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.flag-nolayer .page {
+  will-change: auto;
+}
+
 .mirror-3d-wrap .mirror-face {
   width: 100%;
   filter: none;
