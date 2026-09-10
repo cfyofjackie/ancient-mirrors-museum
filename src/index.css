@@ -699,7 +699,9 @@ body {
   border: 1px solid rgba(212, 175, 55, 0.18);
   border-bottom: none;
   border-radius: 16px 16px 0 0;
-  padding: 12px 24px calc(20px + env(safe-area-inset-bottom));
+  /* 卡片本身不加 padding：顶部把手与内容 padding 分别由 .sheet-grab / .sheet-scroll 承担，
+     避免负边距把把手顶到卡片外 */
+  padding: 0;
   z-index: 21;
   text-align: center;
 }
@@ -716,34 +718,31 @@ body {
   min-width: 0;
 }
 
-/* 顶部把手横条：视觉提示可下拉关闭 */
+/* 顶部把手区：卡片内顶部居中一条把手（下拉关闭的视觉提示） */
 .sheet-grab {
   flex: 0 0 auto;
-  display: block;
-  width: 100%;
-  margin: -12px -24px 4px;
-  padding: 10px 24px 6px;
-}
-
-.sheet-grab .sheet-handle {
-  margin-bottom: 0;
-}
-
-/* 可滚动内容区：不与下方整卡拖拽手势冲突 */
-.sheet-scroll {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
 }
 
 .sheet-handle {
   width: 36px;
   height: 4px;
   border-radius: 2px;
-  background: var(--ink-faint);
-  margin: 0 auto 14px;
+  background: rgba(233, 227, 212, 0.22);
+  margin: 0;
+}
+
+/* 可滚动内容区：内容 padding 移到这里，避免与整卡下拉手势冲突 */
+.sheet-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 6px 24px calc(20px + env(safe-area-inset-bottom));
 }
 
 .sheet-title {
@@ -792,17 +791,20 @@ body {
   text-underline-offset: 3px;
 }
 
-/* 右上角极简关闭按钮：44×44 命中区、米白低透明度 */
+/* 右上角关闭按钮：与把手同处顶部一行，44×44 命中区、垂直居中 */
 .sheet-x {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 44px;
-  height: 44px;
+  top: 0;
+  right: 2px;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: none;
   background: transparent;
-  color: rgba(233, 227, 212, 0.55);
-  font-size: 22px;
+  color: rgba(233, 227, 212, 0.5);
+  font-size: 20px;
   line-height: 1;
   cursor: pointer;
   transition: color 0.2s;
@@ -1223,7 +1225,10 @@ body {
 @media (min-width: 760px) {
   .sheet-reference {
     width: min(calc(100% - 64px), 760px);
-    padding: 14px 30px 30px;
+  }
+
+  .sheet-reference .sheet-scroll {
+    padding: 10px 30px 30px;
   }
 
   .sheet-reference .sheet-body {
@@ -1353,7 +1358,10 @@ body {
     max-height: min(82dvh, 700px);
     border-right: none;
     border-left: none;
-    padding: 10px 22px calc(18px + env(safe-area-inset-bottom));
+  }
+
+  .sheet-scroll {
+    padding: 4px 22px calc(18px + env(safe-area-inset-bottom));
   }
 
   .ref-figure img {
