@@ -62,7 +62,19 @@ export default function MirrorStage({
           {tableauMode && (
             <div className={`flat-mirror flat-mirror-${mirror.art3d?.shape.type ?? 'circle'}${dormant ? '' : ' is-awake'}`} aria-hidden="true">
               <img src={mirror.art3d?.flat ?? mirror.backImage} alt="" draggable={false} />
-              <span>轻触铜镜，让它醒来</span>
+            </div>
+          )}
+          {/* 铜镜下沿的常驻指引：与"轻触铜镜，让它醒来"同一位置，唤醒后接着给翻面指引。
+              独立于 .flat-mirror（那层唤醒后会淡出），pointer-events:none 不挡点镜。 */}
+          {tableauMode && (
+            <div className="mirror-hint" aria-hidden="true">
+              {dormant
+                ? '轻触铜镜，让它醒来'
+                : flipped
+                  ? '轻触铜镜，翻回镜背'
+                  : showHotspots
+                    ? '轻触标记查看纹样说明'
+                    : '轻触铜镜，翻至镜面'}
             </div>
           )}
           {!use3D && reflection && flipped && (

@@ -111,6 +111,17 @@ body {
   position: relative;
 }
 
+/* 换页遮罩独立于 WebGL 子树：旧页退场时变暗，完全遮住后才交换素材，再随新页入场淡出。
+   避免在 Android Chromium 中对“全屏图片 + 透明 canvas”的共同祖先做 opacity 合成。 */
+.page-transition-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: var(--bg-deep);
+  pointer-events: none;
+  will-change: opacity;
+}
+
 /* 展厅主构图：桌面为侧置展签 + 独立展品区，手机在媒体查询中折回纵向三段。
    序厅期间该容器仍在下层维持 3D 生命周期，由 OpeningPages 完整覆盖。 */
 .hall-layout {
@@ -403,11 +414,15 @@ body {
   border-radius: 50%;
 }
 
-.flat-mirror span {
+/* 铜镜下沿的常驻指引药丸：唤醒前/后都在同一位置，文案随状态切换。
+   刻意不放在 .flat-mirror 里——那一层在铜镜唤醒后会整体淡出，会把文字一起带走。
+   pointer-events:none 保证它不挡"点铜镜"（唤醒/翻面/热点）。 */
+.mirror-hint {
   position: absolute;
   bottom: 2%;
   left: 50%;
   transform: translateX(-50%);
+  z-index: 3;
   padding: 5px 11px;
   border: 1px solid rgba(222, 204, 168, 0.18);
   border-radius: 999px;
@@ -416,6 +431,7 @@ body {
   font-size: 11px;
   letter-spacing: 0.12em;
   white-space: nowrap;
+  pointer-events: none;
   /* 不用 backdrop-filter：它会让 Chrome（尤其手机端）在本层移动时逐帧重光栅化，
      造成翻页卡顿；保留半透明深色底即可保证文字可读。 */
   animation: hint-breathe 2.8s ease-in-out infinite;
@@ -503,6 +519,7 @@ body {
   font-size: 13px;
   letter-spacing: 0.12em;
   pointer-events: none;
+  z-index: 3;
 }
 
 /* ---- 热点（SLC 第三节 3：轻微出现、很淡的呼吸，不闪烁） ---- */
@@ -1423,7 +1440,7 @@ body {
     transition-duration: 0ms;
   }
 
-  .flat-mirror span {
+  .mirror-hint {
     animation: none;
   }
   .hint.breathe,

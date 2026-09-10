@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useTransform } from 'framer-motion'
 import mirrors from './data/mirrors'
 import type { Hotspot } from './data/mirrors'
 import MirrorStage from './components/MirrorStage'
@@ -44,6 +44,9 @@ export default function App() {
     },
   })
   const { index, phase, y, opacity, ready } = nav
+  // 不在包含透明 WebGL canvas 的整页祖先上动画 opacity。Chromium/Android WebView
+  // 对这类子树可能逐帧建立离屏合成面；改用独立纯色遮罩保证素材交换时内容仍不可见。
+  const transitionMaskOpacity = useTransform(opacity, value => 1 - value)
   const item = SEQUENCE[index]
   const inHall = item.kind === 'mirror'
   // 最近一次报告素材就绪的镜（mirrors 下标）。商镜在序厅期间已按 mirrors[0] 挂载并绘制完成，
@@ -149,7 +152,7 @@ export default function App() {
           主展厅顶部有 hall-header 展签（朝代名+镜名），随页面整体位移 */}
       <motion.div
         className="page"
-        style={{ y, opacity }}
+        style={{ y }}
         data-phase={phase}
         data-kind={item.kind}
         data-page={index}
@@ -217,12 +220,10 @@ export default function App() {
               )}
             </div>
 
-            {awake && (
-              <p className={`hint${flipped ? ' reflection-disclosure' : ''} breathe`}>
-                {flipped && reflection
-                  ? `${reflection.label} · 艺术复原 · 点击铜镜翻回镜背`
-                  : showHotspots ? '轻触标记查看纹样说明' : '铜镜已醒 · 点击翻至镜面'}
-              </p>
+            {/* 动作指引已统一到铜镜下沿的 .mirror-hint（MirrorStage）；
+                页脚只保留"艺术复原"这一静态标注（口径红线要求持续显示）。 */}
+            {awake && flipped && reflection && (
+              <p className="hint reflection-disclosure">{reflection.label} · 艺术复原</p>
             )}
           </footer>
         </div>
@@ -233,6 +234,12 @@ export default function App() {
           active={item.kind === 'opening'}
         />
       </motion.div>
+
+      <motion.div
+        className="page-transition-mask"
+        style={{ opacity: transitionMaskOpacity }}
+        aria-hidden="true"
+      />
 
       {/* 朝代指示器：固定于屏幕右缘垂直居中，不随拖拽/滑动位移；纯指示，不可点击。
           11 项：序厅两项（空心小点）+ 展厅九镜 */}
