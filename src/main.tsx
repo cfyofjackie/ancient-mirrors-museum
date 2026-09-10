@@ -33,19 +33,28 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { err: Error | nu
 const params = new URLSearchParams(window.location.search)
 const calibrate = params.has('calibrate')
 
-const root = createRoot(document.getElementById('root')!)
-const render = (ui: ReactNode) => root.render(<ErrorBoundary>{ui}</ErrorBoundary>)
+const render = (ui: ReactNode) =>
+  createRoot(document.getElementById('root')!).render(<ErrorBoundary>{ui}</ErrorBoundary>)
 
-if (calibrate) {
-  render(<CalibrateMode />)
-} else if (params.has('poc3d')) {
-  import('./components/Mirror3DPoc').then(({ default: Mirror3DPoc }) => {
-    render(<Mirror3DPoc />)
-  })
-} else {
-  render(
-    <StrictMode>
-      <App />
-    </StrictMode>,
-  )
+// 兜底：若脚本仍在 #root 解析前执行（defer 已规避，但再防一手），等 DOM 就绪再渲染
+function start() {
+  const rootEl = document.getElementById('root')
+  if (!rootEl) {
+    document.addEventListener('DOMContentLoaded', start)
+    return
+  }
+  if (calibrate) {
+    render(<CalibrateMode />)
+  } else if (params.has('poc3d')) {
+    import('./components/Mirror3DPoc').then(({ default: Mirror3DPoc }) => {
+      render(<Mirror3DPoc />)
+    })
+  } else {
+    render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    )
+  }
 }
+start()

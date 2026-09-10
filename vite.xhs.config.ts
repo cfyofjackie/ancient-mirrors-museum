@@ -2,13 +2,15 @@ import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // 容器 CSP 禁 module、且离线 zip 上 module 相对 import 解析不可靠；
-// 构建产物虽是 IIFE，但 Vite 默认仍给入口 script 打上 type="module"，这里统一去掉，
-// 让其成为经典 <script src>（无 module、无 crossorigin）。
+// 构建产物虽是 IIFE，但 Vite 默认仍给入口 script 打上 type="module"，这里统一去掉。
+// 并加上 defer：经典脚本在 <head> 里没有 defer 时，会在 <body>/#root 解析之前执行，
+// 导致 createRoot(null) 崩溃（黑屏、且错误因 body 仍为 null 无法上报）。
+// defer 保证文档解析完成后才执行，此时 #root 与 body 均已存在。
 function stripModuleScript(): Plugin {
   return {
     name: 'xhs-strip-module-script',
     transformIndexHtml(html) {
-      return html.replace(/<script\s+type="module"\s+crossorigin\s+src=/g, '<script src=')
+      return html.replace(/<script\s+type="module"\s+crossorigin\s+src=/g, '<script defer src=')
     },
   }
 }

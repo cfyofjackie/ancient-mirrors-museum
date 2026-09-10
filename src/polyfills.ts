@@ -129,7 +129,7 @@ function showError(msg: string) {
       el.style.cssText =
         'position:fixed;inset:0;z-index:99999;padding:24px;background:#12141a;color:#ff6b6b;' +
         'font:13px/1.7 ui-monospace,Menlo,Consolas,monospace;overflow:auto;white-space:pre-wrap;text-align:left;'
-      document.body.appendChild(el)
+      ;(document.body || document.documentElement).appendChild(el)
     }
     el.textContent = (el.textContent ? el.textContent + '\n' : '') + String(msg)
   } catch {
