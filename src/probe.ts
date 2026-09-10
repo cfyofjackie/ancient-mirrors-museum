@@ -9,6 +9,8 @@
  * 诊断完成后：删除本文件 + main.tsx 里的 import/startProbe() 调用
  *（以及 mirrorScene.ts 里的 __mirrorSceneInfo 挂载）。
  */
+import { perf } from './perf'
+
 export function startProbe() {
   // 1) GPU / 上下文能力
   let gpu = 'n/a'
@@ -79,7 +81,9 @@ export function startProbe() {
       `canvas: ${canvas ? `${canvas.width}x${canvas.height}` : 'n/a'}  dpr=${window.devicePixelRatio}\n` +
       `fps: ${fps.toFixed(1)}  worst2s=${winWorst.toFixed(0)}ms  worstAll=${worstEver.toFixed(0)}ms\n` +
       `long>33=${long33}  >50=${long50}  frames=${total}\n` +
-      (info ? `tex=${info.textures} geo=${info.geometries} calls=${info.calls} tri=${info.triangles}` : 'tex= n/a')
+      (info ? `tex=${info.textures} geo=${info.geometries} calls=${info.calls} tri=${info.triangles}` : 'tex= n/a') +
+      '\n— 翻页耗时（新→旧）—\n' +
+      (perf.history.length ? perf.history.join('\n') : '(还没有翻页)')
     ;(window as unknown as { __probe?: unknown }).__probe = {
       gpu, vendor, software, glVersion, maxTex, maxUnits,
       canvas: canvas ? { w: canvas.width, h: canvas.height } : null, dpr: window.devicePixelRatio,

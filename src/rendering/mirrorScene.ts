@@ -3,6 +3,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import mirrors from '../data/mirrors'
 import type { Art3D, Shape3D } from '../data/mirrors'
 import type { ReflectionProfile } from '../data/reflections'
+import { perf } from '../perf' // 临时诊断（与 src/probe.ts 配套）
 
 const R = 1.22
 const MIRROR_Y = 0
@@ -243,7 +244,9 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
     uploadTasks.delete(task.url)
     try {
       assertAlive()
+      const t0 = performance.now()
       renderer.initTexture(task.texture)
+      perf.upload(performance.now() - t0) // 临时诊断：记录 GPU 上传耗时
       task.resolve(task.texture)
     } catch (error) {
       textures.delete(task.texture)
@@ -452,8 +455,10 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
   }
   const applyArt = async (art: Art3D) => {
     const gen = ++artGeneration
+    perf.mark('artStart')
     // 用户正在等待的镜永远提升为最高优先级，即使它已经由后台预热开始加载。
     const resource = await prepare(art, 0)
+    perf.mark('artPrep')
     if (disposed || gen !== artGeneration) return false
     const firstMaps = !mats.back.map || !mats.back.normalMap
     tex.flat = resource.flat
@@ -472,6 +477,7 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
     if (raf) cancelAnimationFrame(raf)
     tick()
     warmupAround(art)
+    perf.mark('artApplied')
     return true
   }
   const setMode = (next: Mode) => {
