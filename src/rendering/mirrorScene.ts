@@ -554,6 +554,18 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
   document.addEventListener('visibilitychange', visibility)
   canvas.addEventListener('webglcontextlost', contextLost)
 
+  // —— 临时诊断探针：暴露 renderer 的显存/绘制统计供 HUD 读取（诊断完成后连同 src/probe.ts 一起删除）——
+  ;(window as unknown as { __mirrorSceneInfo?: () => Record<string, unknown> }).__mirrorSceneInfo = () => ({
+    textures: renderer.info.memory.textures,
+    geometries: renderer.info.memory.geometries,
+    programs: renderer.info.programs?.length ?? 0,
+    calls: renderer.info.render.calls,
+    triangles: renderer.info.render.triangles,
+    dpr: renderer.getPixelRatio(),
+    canvasW: canvas.width,
+    canvasH: canvas.height,
+  })
+
   return {
     applyArt, setFlipped, setMode, setReflection,
     setInteractionActive(active: boolean) {
@@ -595,6 +607,8 @@ export function createMirrorScene(canvas: HTMLCanvasElement, onError: () => void
       environment.dispose()
       pmrem.dispose()
       renderer.dispose()
+      // 临时诊断探针：卸载时清掉全局钩子
+      ;(window as unknown as { __mirrorSceneInfo?: unknown }).__mirrorSceneInfo = undefined
       // StrictMode 会在同一个仍连接的 canvas 上执行一次清理再挂载。
       // 此时不能主动丢失上下文，否则第二次挂载会收到延迟的 contextlost。
       if (!canvas.isConnected) renderer.forceContextLoss()

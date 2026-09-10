@@ -4,6 +4,7 @@ import './polyfills' // 必须最先：兜住旧内核缺 API + 把运行时错�
 import './index.css'
 import App from './App'
 import CalibrateMode from './components/CalibrateMode'
+import { startProbe } from './probe' // 临时：性能诊断 HUD（定位后删除）
 
 /** 渲染错误边界：出错时在屏幕上展示错误信息（而非黑屏），便于扫码后定位。 */
 class ErrorBoundary extends Component<{ children: ReactNode }, { err: Error | null }> {
@@ -50,6 +51,7 @@ function start() {
       render(<Mirror3DPoc />)
     })
   } else {
+    startProbe() // 临时性能诊断 HUD
     render(
       <StrictMode>
         <App />
