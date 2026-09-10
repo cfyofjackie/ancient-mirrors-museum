@@ -78,6 +78,17 @@
 - `docs/dynasty-reflection-sources-2026-09-09.md`：每朝人物视觉依据、可信度与授权边界。
 - `scripts/diagnostics/README.md`：诊断入口和判定命令。
 
+> **进行中（未结案）**：小红书容器内滑动卡顿的排查与全部实测证据见
+> [`docs/handoff-perf-jank.md`](docs/handoff-perf-jank.md)。该文档记录了已排除项（GPU/显存/软件渲染/纹理上传/3D 就绪）、
+> 已修项（`defer` 入口、画卷图空闲预热）与**尚未插桩的拖拽阶段**，接手前请先读它。
+
+## 小红书小工具打包（Builder Hub）
+
+- 官方规范（已下载到 `.skill/minitool-zip-builder/`）：**zip ≤10 MiB（建议 2 MiB）**、`index.html` 必须在 zip 根、
+  经典脚本 + `defer`、无内联脚本、只允许 jpg/css/gif/svg/png/js/jpeg/json/html/woff2/webp/woff。
+- 构建/压缩/打包三条命令见 `docs/handoff-perf-jank.md` §7.1；产物 `ancient-mirrors-museum-xhs.zip`（当前 8.49 MiB，审计 PASS）。
+- 平台封面/图标在 Builder Hub 界面上传，**不要**放进代码包（`design/branding/` 即此类素材，已移出 `assets/`）。
+
 ## 后续建议
 
 1. 先完成上述真机复核，再决定是否继续压缩贴图或降低手机 DPR；没有数据前保持 DPR 上限 2。

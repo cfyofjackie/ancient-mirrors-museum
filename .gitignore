@@ -10,6 +10,9 @@ dist-xhs-pkg/
 _minitool.zip
 ancient-mirrors-museum-xhs.zip
 
+# 性能排查用的真机录屏与抽帧（诊断产物，不进版本库；见 docs/handoff-perf-jank.md）
+lagging/
+
 # 用户原始素材（大图，不进版本库；优化产物在 assets/ 正常提交）
 assets-src/
 
