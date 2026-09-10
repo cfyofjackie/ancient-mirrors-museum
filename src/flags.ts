@@ -7,6 +7,7 @@
  *   ?nolayer     去掉 .page 的 will-change: transform
  *   ?dpr1        WebGL DPR 1.5 → 1.0
  *   ?noprobe     关闭诊断探针（它自身有每帧 rAF + 每 250ms 改 HUD）
+ *   ?flip        强制走 CSS 平面回退（验证 3D 失败时的观感，不再露占位图）
  */
 const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
 
@@ -16,6 +17,7 @@ export const flags = {
   nolayer: params.has('nolayer'),
   dpr1: params.has('dpr1'),
   noprobe: params.has('noprobe'),
+  flip: params.has('flip'),
 }
 
 /** 供 HUD 显示当前生效的开关 */

@@ -44,11 +44,12 @@
     const frame = t => {
       if (!active) return
       const page = document.querySelector('.page')
+      const mask = document.querySelector('.page-transition-mask')
       const canvas = document.querySelector('.mirror-3d-wrap canvas')
       const bounds = page.getBoundingClientRect()
       const matrix = new DOMMatrixReadOnly(getComputedStyle(page).transform)
       const mirror = document.querySelector('.mirror-3d-wrap').getBoundingClientRect()
-      samples.push({t, y:matrix.m42, opacity:Number(getComputedStyle(page).opacity), phase:page.dataset.phase, top:bounds.top,bottom:bounds.bottom, mirrorTop:mirror.top,mirrorBottom:mirror.bottom, dynasty:document.querySelector('.dynasty-name').textContent, renderer:probe.rendererInfo, canvas:canvas ? [canvas.width,canvas.height] : null})
+      samples.push({t, y:matrix.m42, opacity:Number(getComputedStyle(page).opacity), maskOpacity:mask ? Number(getComputedStyle(mask).opacity) : 0, phase:page.dataset.phase, top:bounds.top,bottom:bounds.bottom, mirrorTop:mirror.top,mirrorBottom:mirror.bottom, dynasty:document.querySelector('.dynasty-name').textContent, renderer:probe.rendererInfo, canvas:canvas ? [canvas.width,canvas.height] : null})
       requestAnimationFrame(frame)
     }
     requestAnimationFrame(frame)
@@ -81,7 +82,7 @@
     const changes = []
     for(let i=1;i<samples.length;i++) {
       const a=samples[i-1],b=samples[i]
-      if(a.dynasty!==b.dynasty || Math.abs(b.y-a.y)>innerHeight*.75) changes.push({from:a,to:b,jump:Math.round(b.y-a.y),oldContentVisible:a.opacity>0.05 && b.opacity>0.05 && a.top<innerHeight && a.bottom>0})
+      if(a.dynasty!==b.dynasty || Math.abs(b.y-a.y)>innerHeight*.75) changes.push({from:a,to:b,jump:Math.round(b.y-a.y),oldContentVisible:a.opacity>0.05 && b.opacity>0.05 && a.maskOpacity<0.95 && b.maskOpacity<0.95 && a.top<innerHeight && a.bottom>0})
     }
     const gaps = samples.slice(1).map((s,i)=>s.t-samples[i].t)
     const switchGaps = samples.slice(1).filter(s=>inputs.some(t=>s.t>=t && s.t<t+700)).map(s=>s.t-samples[samples.indexOf(s)-1].t)

@@ -215,6 +215,18 @@ body {
   filter: saturate(0.68) brightness(0.86) contrast(1.08) drop-shadow(0 24px 48px rgba(0, 0, 0, 0.45));
 }
 
+/* 圆形镜（商/春秋/战国/汉/隋/元/明）的 CSS 回退：镜面用同一套"磨光古铜"渐变
+   （3D 正面本来就是程序纹理，没有实物图），同时把 3D 那张方图裁成圆形镜体。
+   此前只有 polygon/lobed 有这条规则，圆形镜于是会露出早期 make-placeholders 的占位图。 */
+.mirror-fallback-shape-circle {
+  border-radius: 50%;
+  background-color: #5b5142;
+  background-image:
+    radial-gradient(circle at 42% 36%, rgba(164, 146, 105, 0.62), transparent 43%),
+    repeating-radial-gradient(circle, transparent 0 12px, rgba(41, 36, 27, 0.08) 13px, transparent 14px 20px),
+    linear-gradient(145deg, #796a51, #443d33);
+}
+
 .mirror-fallback-shape-polygon {
   border-radius: 0;
   background-color: #5b5142;

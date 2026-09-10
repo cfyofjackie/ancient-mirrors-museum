@@ -58,7 +58,7 @@ export interface Mirror {
   shortDescription: string
   /** 该朝代的主题色（极低透明度背景微染，SLC 第二节：背景可有非常轻微的颜色变化） */
   tint: string
-  frontImage: string
+  /** 镜背图（CSS 回退的兜底；首选仍是 3D 的 art3d.flat 真彩图） */
   backImage: string
   /** 展示镜背时的热点（SLC：热点设在背面） */
   hotspots: Hotspot[]
@@ -76,7 +76,6 @@ const mirrors: Mirror[] = [
     shortDescription:
       '商代铜镜形制小巧，纹饰只有几圈弦纹——它的同类，曾随商王武丁的王后妇好深埋地下三千年。',
     tint: '#4a3b2a',
-    frontImage: 'mirrors/shang/front.webp',
     backImage: 'mirrors/shang/back.webp',
     hotspots: [
       {
@@ -128,7 +127,6 @@ const mirrors: Mirror[] = [
     shortDescription:
       '春秋铜镜开始有了“画面”：钮上奔鹿、钮下飞鸟、两侧猛虎张口——铜镜第一次讲起了故事。',
     tint: '#556055',
-    frontImage: 'mirrors/chunqiu/front.webp',
     backImage: 'mirrors/chunqiu/back.webp',
     hotspots: [
       {
@@ -180,7 +178,6 @@ const mirrors: Mirror[] = [
     shortDescription:
       '战国镜纹承商周而来：曲折多变的雷纹布满镜背，源自青铜器上的勾连雷纹——古人对于天地的敬畏与崇拜，铸进了铜里。',
     tint: '#6b6b3a',
-    frontImage: 'mirrors/zhanguo/front.webp',
     backImage: 'mirrors/zhanguo/back.webp',
     hotspots: [
       {
@@ -233,7 +230,6 @@ const mirrors: Mirror[] = [
     shortDescription:
       '汉代铜镜规矩方正，博局纹与四神纹样讲求对称，映照出汉人眼中的天地秩序。',
     tint: '#8a6a4f',
-    frontImage: 'mirrors/han/front.webp',
     backImage: 'mirrors/han/back.webp',
     hotspots: [
       {
@@ -283,7 +279,6 @@ const mirrors: Mirror[] = [
     shortDescription:
       '隋代镜背多了铭文与生肖：“光正随人，长命宜新”环于钮座，十二生肖环列镜缘——祝愿与时间，一起被照进镜子。',
     tint: '#5f6b62',
-    frontImage: 'mirrors/sui/front.webp',
     backImage: 'mirrors/sui/back.webp',
     hotspots: [
       {
@@ -336,7 +331,6 @@ const mirrors: Mirror[] = [
     shortDescription:
       '唐代铜镜装饰华丽奔放：葡萄寓意多子多福、一本万利，海兽瑞禽穿行蔓枝之间，铸出盛世的雍容气度。',
     tint: '#a8823f',
-    frontImage: 'mirrors/tang/front.webp',
     backImage: 'mirrors/tang/back.webp',
     hotspots: [
       {
@@ -386,7 +380,6 @@ const mirrors: Mirror[] = [
     shortDescription:
       '宋代铜镜趋于素雅：葵花形的镜缘、疏朗的铭纹——审美从繁复纹样转向了器形与质地本身。',
     tint: '#6f7a72',
-    frontImage: 'mirrors/song/front.webp',
     backImage: 'mirrors/song/back.webp',
     hotspots: [
       {
@@ -429,7 +422,6 @@ const mirrors: Mirror[] = [
     shortDescription:
       '元代铜镜换了一种庇佑方式：两圈梵文准咒环列镜背——照容之外，人们还希望镜子能护身辟邪。',
     tint: '#2f3a45',
-    frontImage: 'mirrors/yuan/front.webp',
     backImage: 'mirrors/yuan/back.webp',
     hotspots: [
       {
@@ -481,7 +473,6 @@ const mirrors: Mirror[] = [
     shortDescription:
       '明代铜镜仿古与吉祥铭文并行，一句「五子登科」，照见的是寻常人家的朴素祈愿。',
     tint: '#7d5450',
-    frontImage: 'mirrors/ming/front.webp',
     backImage: 'mirrors/ming/back.webp',
     hotspots: [
       {
