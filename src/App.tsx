@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import mirrors from './data/mirrors'
 import type { Hotspot } from './data/mirrors'
@@ -7,6 +7,7 @@ import InfoCard, { type SheetContent } from './components/InfoCard'
 import OpeningPages from './components/OpeningPages'
 import usePageNavigation from './interaction/usePageNavigation'
 import { SEQUENCE } from './interaction/sequence'
+import { warmTableaux, pauseTableauWarmup } from './interaction/tableauWarmup'
 import { REFLECTIONS } from './data/reflections'
 import { TABLEAUX } from './data/tableaux'
 import { MUSEUM_INTRO } from './data/museumIntro'
@@ -70,6 +71,28 @@ export default function App() {
     else if (typeof img.decode === 'function') img.decode().then(done, done)
     else img.addEventListener('load', done, { once: true })
   }, [tableau, mirror.id, index])
+
+  // 画卷图预热：落定空闲时提前解码上一/下一镜的全屏画卷大图（视觉零影响），
+  // 使常规上/下滑命中已解码缓存，避免翻页瞬间现解码（实测最坏 ~100ms）阻塞主线程造成卡顿。
+  // 上一镜优先——"往下滑"是用户反馈最明显的痛点方向。
+  const neighborTableaux = useMemo(() => {
+    const out: Array<{ desktop: string; mobile: string }> = []
+    for (const offset of [-1, 1, -2, 2]) {
+      const entry = SEQUENCE[(index + offset + SEQUENCE.length) % SEQUENCE.length]
+      if (entry.kind === 'mirror') {
+        const profile = TABLEAUX[mirrors[entry.index].id]
+        if (profile) out.push(profile)
+      }
+    }
+    return out
+  }, [index])
+
+  useEffect(() => { pauseTableauWarmup(phase !== 'idle') }, [phase])
+
+  useEffect(() => {
+    if (phase !== 'idle') return
+    warmTableaux(neighborTableaux)
+  }, [neighborTableaux, phase])
 
   useEffect(() => {
     setWaiting(false)
