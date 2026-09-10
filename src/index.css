@@ -416,11 +416,11 @@ body {
 
 /* 铜镜下沿的常驻指引药丸：唤醒前/后都在同一位置，文案随状态切换。
    刻意不放在 .flat-mirror 里——那一层在铜镜唤醒后会整体淡出，会把文字一起带走。
-   pointer-events:none 保证它不挡"点铜镜"（唤醒/翻面/热点）。
-   底色刻意加深、文字提亮：它常常压在**金色镜背**上，浅底+低透明度会看不清。 */
+   位置挂在**镜盒下沿之外**（top:100%+6px），落在镜下的画卷上：不压金色镜背，文字才清楚。
+   pointer-events:none 保证它不挡"点铜镜"（唤醒/翻面/热点）。 */
 .mirror-hint {
   position: absolute;
-  bottom: 2%;
+  top: calc(100% + 6px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 3;
