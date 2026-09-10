@@ -416,25 +416,39 @@ body {
 
 /* 铜镜下沿的常驻指引药丸：唤醒前/后都在同一位置，文案随状态切换。
    刻意不放在 .flat-mirror 里——那一层在铜镜唤醒后会整体淡出，会把文字一起带走。
-   pointer-events:none 保证它不挡"点铜镜"（唤醒/翻面/热点）。 */
+   pointer-events:none 保证它不挡"点铜镜"（唤醒/翻面/热点）。
+   底色刻意加深、文字提亮：它常常压在**金色镜背**上，浅底+低透明度会看不清。 */
 .mirror-hint {
   position: absolute;
   bottom: 2%;
   left: 50%;
   transform: translateX(-50%);
   z-index: 3;
-  padding: 5px 11px;
-  border: 1px solid rgba(222, 204, 168, 0.18);
+  padding: 5px 12px;
+  border: 1px solid rgba(222, 204, 168, 0.32);
   border-radius: 999px;
-  background: rgba(27, 23, 18, 0.42);
-  color: rgba(235, 220, 190, 0.66);
+  background: rgba(16, 13, 10, 0.78);
+  color: rgba(244, 234, 214, 0.96);
   font-size: 11px;
   letter-spacing: 0.12em;
   white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
   pointer-events: none;
   /* 不用 backdrop-filter：它会让 Chrome（尤其手机端）在本层移动时逐帧重光栅化，
-     造成翻页卡顿；保留半透明深色底即可保证文字可读。 */
-  animation: hint-breathe 2.8s ease-in-out infinite;
+     造成翻页卡顿；改用更实的底色保证可读。 */
+  /* 专用呼吸：下限 0.78（而非通用 hint-breathe 的 0.45），避免呼吸到低点时被金色镜面吃掉 */
+  animation: mirror-hint-breathe 2.8s ease-in-out infinite;
+}
+
+@keyframes mirror-hint-breathe {
+  0%,
+  100% {
+    opacity: 0.78;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 /* 九朝人物旧影：人物不是贴在镜上的照片，而是与古铜底色叠合的可选择旧影。 */
